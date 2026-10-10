@@ -31,8 +31,49 @@ struct StreamAddress: Hashable, Identifiable {
     }
 }
 
+// CONNECTION_ACTIVITY_POLICY_BEGIN
+/// Tracks confirmed media delivery separately from listener readiness and capture demand.
+/// All mutation happens on StreamServer's serial network queue.
+struct ConnectionActivityPolicy {
+    static let activityTimeout: TimeInterval = 2
+
+    private var clientDeadlines: [UUID: TimeInterval] = [:]
+    private var mediaDeadline: TimeInterval?
+
+    mutating func recordClientDelivery(for client: UUID, at now: TimeInterval) {
+        clientDeadlines[client] = now + Self.activityTimeout
+    }
+
+    mutating func recordMediaDelivery(at now: TimeInterval) {
+        mediaDeadline = now + Self.activityTimeout
+    }
+
+    @discardableResult
+    mutating func endClient(_ client: UUID, at now: TimeInterval) -> Bool {
+        clientDeadlines.removeValue(forKey: client)
+        return isInUse(at: now)
+    }
+
+    mutating func reset() {
+        clientDeadlines.removeAll()
+        mediaDeadline = nil
+    }
+
+    mutating func isInUse(at now: TimeInterval) -> Bool {
+        clientDeadlines = clientDeadlines.filter { _, deadline in deadline > now }
+        if mediaDeadline ?? 0 <= now { mediaDeadline = nil }
+        return !clientDeadlines.isEmpty || mediaDeadline != nil
+    }
+}
+// CONNECTION_ACTIVITY_POLICY_END
+
 final class StreamServer: ObservableObject {
     @Published private(set) var isRunning = false
+    @Published private(set) var isInUse = false
+    /// True only after the Rocam desktop receiver has completed its trusted
+    /// localhost USB bootstrap or delivered authenticated media over that path.
+    /// iOS does not expose a public API for detecting a physical cable directly.
+    @Published private(set) var isUSBConnected = false
     @Published private(set) var errorMessage: String?
     @Published private(set) var addresses: [StreamAddress] = []
 
@@ -45,6 +86,15 @@ final class StreamServer: ObservableObject {
     private var clients: [UUID: NWConnection] = [:]
     private var imageClients: [UUID: Bool] = [:]
     private var encodedClients: [UUID: RocamVideoCodec] = [:]
+    private var connectionActivity = ConnectionActivityPolicy()
+    private var usbActivity = ConnectionActivityPolicy()
+    private var usbBootstrapExpiresAt: TimeInterval = 0
+    private var usbEligibleClients = Set<UUID>()
+    private var activityExpiryTimer: DispatchSourceTimer?
+    private var lastQueuedInUse = false
+    private var lastQueuedUSBConnected = false
+    private var activityRevision: UInt64 = 0
+    private var publishedActivityRevision: UInt64 = 0
     private var addressTimer: DispatchSourceTimer?
     private let frames: FrameStore
     private weak var camera: CameraService?
@@ -75,6 +125,7 @@ final class StreamServer: ObservableObject {
                     guard let self, self.listenerID == listenerID else { return }
                     switch state {
                     case .ready:
+                        self.resetConnectionActivity()
                         self.frames.setJPEGCaptureEnabled(true)
                         DispatchQueue.main.async {
                             AppServices.shared.setStreamingActive(true)
@@ -93,6 +144,7 @@ final class StreamServer: ObservableObject {
                         self.addressTimer = timer
                         timer.resume()
                     case .failed(let error):
+                        self.resetConnectionActivity()
                         self.stopAudio()
                         self.frames.setJPEGCaptureEnabled(false)
                         self.camera?.resetHDRPresentation()
@@ -113,6 +165,7 @@ final class StreamServer: ObservableObject {
                         self.addressTimer?.cancel()
                         self.addressTimer = nil
                     case .cancelled:
+                        self.resetConnectionActivity()
                         self.stopAudio()
                         self.frames.setJPEGCaptureEnabled(false)
                         self.camera?.resetHDRPresentation()
@@ -144,6 +197,7 @@ final class StreamServer: ObservableObject {
 
     func stop() {
         queue.async {
+            self.resetConnectionActivity()
             self.stopAudio()
             self.listener?.cancel()
             self.listener = nil
@@ -169,6 +223,123 @@ final class StreamServer: ObservableObject {
         DispatchQueue.main.async { [weak self] in self?.audio?.stop() }
     }
 
+    /// A green indicator means that an authenticated receiver has received actual
+    /// video or media data recently. Listening, request headers, and capture demand
+    /// intentionally do not reach this path.
+    private func recordClientDelivery(for id: UUID) {
+        guard clients[id] != nil else { return }
+        let now = ProcessInfo.processInfo.systemUptime
+        connectionActivity.recordClientDelivery(for: id, at: now)
+        recordUSBDelivery(for: id, persistent: true, at: now)
+        publishConnectionActivity()
+        updateActivityExpiryTimer()
+    }
+
+    /// Short one-shot deadlines make completed robot-frame or HDR segment responses
+    /// visible without treating the request's warm-up or playlist as active use.
+    private func recordMediaDelivery(for id: UUID) {
+        guard clients[id] != nil else { return }
+        let now = ProcessInfo.processInfo.systemUptime
+        connectionActivity.recordMediaDelivery(at: now)
+        recordUSBDelivery(for: id, persistent: false, at: now)
+        publishConnectionActivity()
+        updateActivityExpiryTimer()
+    }
+
+    private func finishConnectionActivity(for id: UUID) {
+        let now = ProcessInfo.processInfo.systemUptime
+        _ = connectionActivity.endClient(id, at: now)
+        _ = usbActivity.endClient(id, at: now)
+        usbEligibleClients.remove(id)
+        publishConnectionActivity()
+        updateActivityExpiryTimer()
+    }
+
+    private func resetConnectionActivity() {
+        connectionActivity.reset()
+        usbActivity.reset()
+        usbBootstrapExpiresAt = 0
+        usbEligibleClients.removeAll()
+        publishConnectionActivity()
+        activityExpiryTimer?.cancel()
+        activityExpiryTimer = nil
+    }
+
+    /// A successful `/usb/session` response is the only bootstrap evidence for a
+    /// USB receiver. It is intentionally short-lived: an authenticated loopback
+    /// request must deliver media to keep the USB state alive.
+    private func recordUSBSessionBootstrap(for id: UUID, listenerID expectedListenerID: UUID) {
+        guard listenerID == expectedListenerID, clients[id] != nil else { return }
+        usbBootstrapExpiresAt = ProcessInfo.processInfo.systemUptime + ConnectionActivityPolicy.activityTimeout
+        publishConnectionActivity()
+        updateActivityExpiryTimer()
+    }
+
+    /// A loopback request can become a USB receiver only while a verified
+    /// bootstrap or an already-active USB receiver is fresh. A normal simulator
+    /// or local browser stream never gets this eligibility by itself.
+    private func markUSBEligibleClient(_ id: UUID, connection: NWConnection) {
+        guard isLoopbackPeer(connection) else { return }
+        let now = ProcessInfo.processInfo.systemUptime
+        guard usbBootstrapExpiresAt > now || usbActivity.isInUse(at: now) else { return }
+        usbEligibleClients.insert(id)
+    }
+
+    private func recordUSBDelivery(for id: UUID, persistent: Bool, at now: TimeInterval) {
+        guard usbEligibleClients.contains(id) else { return }
+        // The bootstrap proves the receiver; delivered bytes take over from it so
+        // a later stream disconnect clears this state immediately.
+        usbBootstrapExpiresAt = 0
+        if persistent {
+            usbActivity.recordClientDelivery(for: id, at: now)
+        } else {
+            usbActivity.recordMediaDelivery(at: now)
+        }
+    }
+
+    /// One timer bounds idle detection without creating one delayed closure per frame.
+    private func updateActivityExpiryTimer() {
+        let now = ProcessInfo.processInfo.systemUptime
+        guard connectionActivity.isInUse(at: now) || usbActivity.isInUse(at: now) || usbBootstrapExpiresAt > now else {
+            activityExpiryTimer?.cancel()
+            activityExpiryTimer = nil
+            return
+        }
+        guard activityExpiryTimer == nil else { return }
+        let timer = DispatchSource.makeTimerSource(queue: queue)
+        timer.schedule(deadline: .now() + .milliseconds(100), repeating: .milliseconds(100))
+        timer.setEventHandler { [weak self] in
+            guard let self else { return }
+            self.publishConnectionActivity()
+            self.updateActivityExpiryTimer()
+        }
+        activityExpiryTimer = timer
+        timer.resume()
+    }
+
+    private func publishConnectionActivity() {
+        let now = ProcessInfo.processInfo.systemUptime
+        let inUse = connectionActivity.isInUse(at: now)
+        let usbConnected = usbActivity.isInUse(at: now) || usbBootstrapExpiresAt > now
+        guard inUse != lastQueuedInUse || usbConnected != lastQueuedUSBConnected else { return }
+        lastQueuedInUse = inUse
+        lastQueuedUSBConnected = usbConnected
+        activityRevision &+= 1
+        let revision = activityRevision
+        DispatchQueue.main.async { [weak self] in
+            guard let self, revision >= self.publishedActivityRevision else { return }
+            self.publishedActivityRevision = revision
+            if self.isInUse != inUse { self.isInUse = inUse }
+            if self.isUSBConnected != usbConnected { self.isUSBConnected = usbConnected }
+        }
+    }
+
+    private func disconnect(_ connection: NWConnection, id: UUID) {
+        let wasConnected = clients.removeValue(forKey: id) != nil
+        if wasConnected { endStreamingClient(id) }
+        connection.cancel()
+    }
+
     private func accept(_ connection: NWConnection) {
         let id = UUID()
         clients[id] = connection
@@ -176,8 +347,7 @@ final class StreamServer: ObservableObject {
             switch state {
             case .failed, .cancelled:
                 guard let self else { return }
-                self.clients.removeValue(forKey: id)
-                self.endStreamingClient(id)
+                self.disconnect(connection, id: id)
             default: break
             }
         }
@@ -224,17 +394,21 @@ final class StreamServer: ObservableObject {
             guard method == "GET",
                   url.query == nil,
                   body.isEmpty,
-                  isTrustedUSBSessionRequest(header: header, connection: connection) else {
+                  isTrustedUSBSessionRequest(header: header, connection: connection),
+                  let listenerID else {
                 respond(connection, status: "403 Forbidden")
                 return
             }
             let session = Data("{\"protocolVersion\":1,\"key\":\"\(accessKey)\"}".utf8)
-            respond(connection, type: "application/json", body: session)
+            respond(connection, type: "application/json", body: session) { [weak self] in
+                self?.recordUSBSessionBootstrap(for: id, listenerID: listenerID)
+            }
             return
         }
 
         let key = url.queryItems?.first(where: { $0.name == "key" })?.value
         guard key == accessKey else { respond(connection, status: "403 Forbidden"); return }
+        markUSBEligibleClient(id, connection: connection)
         switch (method, url.path) {
         case ("GET", "/"):
             respond(connection, type: "text/html; charset=utf-8", body: Data(Self.viewerHTML(key: accessKey).utf8))
@@ -250,19 +424,20 @@ final class StreamServer: ObservableObject {
             streamEncoded(connection, id: id, codec: .hevc)
         case ("GET", "/snapshot.jpg"):
             guard let image = frames.latestColor() else { respond(connection, status: "503 Service Unavailable"); return }
-            respond(connection, type: "image/jpeg", body: image)
+            respond(connection, type: "image/jpeg", body: image, id: id, recordsMediaDelivery: true)
         case ("GET", "/depth.jpg"):
             guard let image = frames.latestDepth() else { respond(connection, status: "404 Not Found"); return }
-            respond(connection, type: "image/jpeg", body: image)
+            respond(connection, type: "image/jpeg", body: image, id: id, recordsMediaDelivery: true)
         case ("GET", "/depth.f32"):
             guard let depth = frames.latestDepthRaw() else { respond(connection, status: "404 Not Found"); return }
-            respond(connection, type: "application/octet-stream", body: depth)
+            respond(connection, type: "application/octet-stream", body: depth, id: id, recordsMediaDelivery: true)
         case ("GET", "/robot.frame"):
             frames.markRobotViewer()
             guard let packet = frames.latestRobotPacket() else {
                 respond(connection, status: "503 Service Unavailable"); return
             }
-            respond(connection, type: "application/x-rocam-robot-frame", body: packet)
+            respond(connection, type: "application/x-rocam-robot-frame", body: packet,
+                    id: id, recordsMediaDelivery: true)
         case ("GET", "/hdr.m3u8"):
             frames.markHDRViewer()
             guard let playlist = camera?.hdrStream.playlist(key: accessKey) else {
@@ -276,7 +451,8 @@ final class StreamServer: ObservableObject {
                                                             generation: url.queryItems?.first(where: { $0.name == "gen" })?.value) else {
                 respond(connection, status: "404 Not Found"); return
             }
-            respond(connection, type: name == "init.mp4" ? "video/mp4" : "video/iso.segment", body: resource)
+            respond(connection, type: name == "init.mp4" ? "video/mp4" : "video/iso.segment", body: resource,
+                    id: id, recordsMediaDelivery: true)
         case ("GET", "/audio.wav"):
             guard frames.isAudioActive() else { respond(connection, status: "404 Not Found"); return }
             streamAudio(connection, id: id)
@@ -640,11 +816,21 @@ final class StreamServer: ObservableObject {
     }
 
 
-    private func respond(_ connection: NWConnection, status: String = "200 OK", type: String = "text/plain", body: Data = Data()) {
+    private func respond(_ connection: NWConnection, status: String = "200 OK", type: String = "text/plain", body: Data = Data(),
+                         id: UUID? = nil, recordsMediaDelivery: Bool = false,
+                         onSuccessfulSend: (() -> Void)? = nil) {
         let head = "HTTP/1.1 \(status)\r\nContent-Type: \(type)\r\nContent-Length: \(body.count)\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n"
         var response = Data(head.utf8)
         response.append(body)
-        connection.send(content: response, completion: .contentProcessed { _ in connection.cancel() })
+        connection.send(content: response, completion: .contentProcessed { [weak self] error in
+            if error == nil {
+                if recordsMediaDelivery, let id {
+                    self?.recordMediaDelivery(for: id)
+                }
+                onSuccessfulSend?()
+            }
+            connection.cancel()
+        })
     }
 
     private func streamImages(_ connection: NWConnection, id: UUID, depth: Bool) {
@@ -652,8 +838,10 @@ final class StreamServer: ObservableObject {
         frames.beginImageStream(depth: depth)
         let head = "HTTP/1.0 200 OK\r\nContent-Type: multipart/x-mixed-replace; boundary=frame\r\nCache-Control: no-store\r\nPragma: no-cache\r\n\r\n"
         connection.send(content: Data(head.utf8), completion: .contentProcessed { [weak self] error in
-            guard error == nil else { connection.cancel(); return }
-            self?.sendImage(connection, id: id, depth: depth, after: 0)
+            guard let self, error == nil else { connection.cancel(); return }
+            guard self.clients[id] != nil, self.imageClients[id] == depth else { return }
+            self.watchStreamingClient(connection, id: id)
+            self.sendImage(connection, id: id, depth: depth, after: 0)
         })
     }
 
@@ -665,6 +853,7 @@ final class StreamServer: ObservableObject {
         let head = "HTTP/1.0 200 OK\r\nContent-Type: application/x-rocam-video\r\nCache-Control: no-store\r\nPragma: no-cache\r\n\r\n"
         connection.send(content: Data(head.utf8), completion: .contentProcessed { [weak self] error in
             guard let self, error == nil else { connection.cancel(); return }
+            guard self.clients[id] != nil, self.encodedClients[id] == codec else { return }
             self.watchStreamingClient(connection, id: id)
             self.sendEncoded(connection, id: id, codec: codec, after: sequence)
         })
@@ -677,7 +866,7 @@ final class StreamServer: ObservableObject {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 1) { [weak self] data, _, complete, error in
             guard let self else { return }
             if data != nil || complete || error != nil {
-                connection.cancel()
+                self.disconnect(connection, id: id)
                 return
             }
             self.watchStreamingClient(connection, id: id)
@@ -685,6 +874,7 @@ final class StreamServer: ObservableObject {
     }
 
     private func endStreamingClient(_ id: UUID) {
+        finishConnectionActivity(for: id)
         if let depth = imageClients.removeValue(forKey: id) {
             frames.endImageStream(depth: depth)
         }
@@ -709,7 +899,10 @@ final class StreamServer: ObservableObject {
         if let next = frames.encodedPacket(codec: codec, after: sequence) {
             if next.skipped { camera?.compressedClientConnected(codec: codec) }
             connection.send(content: next.packet.wireData(), completion: .contentProcessed { [weak self] error in
-                guard let self, error == nil else { connection.cancel(); return }
+                guard let self else { connection.cancel(); return }
+                guard error == nil else { self.disconnect(connection, id: id); return }
+                guard self.clients[id] != nil, self.encodedClients[id] == codec else { return }
+                self.recordClientDelivery(for: id)
                 self.queue.async { [weak self] in
                     self?.sendEncoded(connection, id: id, codec: codec, after: next.packet.sequence)
                 }
@@ -727,7 +920,7 @@ final class StreamServer: ObservableObject {
 
     private func sendImage(_ connection: NWConnection, id: UUID, depth: Bool, after sequence: UInt64,
                            retryDelay: Int = 8) {
-        guard clients[id] != nil else { return }
+        guard clients[id] != nil, imageClients[id] == depth else { return }
         let nextFrame = depth ? frames.latestDepth(after: sequence) : frames.latestColor(after: sequence)
         if let (nextSequence, image) = nextFrame {
             let header = "--frame\r\nContent-Type: image/jpeg\r\nContent-Length: \(image.count)\r\n\r\n"
@@ -736,7 +929,10 @@ final class StreamServer: ObservableObject {
             part.append(Data("\r\n".utf8))
             let startedAt = DispatchTime.now().uptimeNanoseconds
             connection.send(content: part, completion: .contentProcessed { [weak self] error in
-                guard let self, error == nil else { connection.cancel(); return }
+                guard let self else { connection.cancel(); return }
+                guard error == nil else { self.disconnect(connection, id: id); return }
+                guard self.clients[id] != nil, self.imageClients[id] == depth else { return }
+                self.recordClientDelivery(for: id)
                 let interval = max(1, 1000 / self.frames.currentStreamFPS())
                 let elapsed = Int((DispatchTime.now().uptimeNanoseconds - startedAt) / 1_000_000)
                 self.queue.asyncAfter(deadline: .now() + .milliseconds(max(0, interval - elapsed))) { [weak self] in
