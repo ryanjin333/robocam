@@ -2,7 +2,7 @@
 param(
     [Parameter(Mandatory)][string]$MsysRoot,
     [Parameter(Mandatory)][string]$OutputDirectory,
-    [string]$SourceMirror = 'https://mirror.msys2.org/mingw/sources'
+    [string]$SourceMirror = 'https://repo.msys2.org/mingw/sources'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -70,8 +70,14 @@ foreach ($package in $packageRecords.Keys | Sort-Object) {
     $archiveName = "$base-$version.src.tar.zst"
     $sourceUrl = "$SourceMirror/$archiveName"
     $archivePath = Join-Path $sources $archiveName
-    Invoke-WebRequest -Uri $sourceUrl -OutFile $archivePath
+    try {
+        Invoke-WebRequest -Uri $sourceUrl -OutFile $archivePath -ErrorAction Stop
+    } catch {
+        throw "could not download the official MSYS2 source archive for $package $version"
+    }
     if ((Get-Item -LiteralPath $archivePath).Length -eq 0) { throw "empty MSYS2 source archive: $sourceUrl" }
+    & $bsdtar -tf $archivePath | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "MSYS2 source archive is not a readable tar.zst for $package $version" }
     $sourceRecords += [ordered]@{ package = $package; base = $base; version = $version; url = $sourceUrl; sha256 = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash }
 
     $licenseFiles = & $pacman -Ql $package | ForEach-Object { ($_ -split '\s+', 2)[1] } | Where-Object { $_ -match '^/mingw64/share/licenses/.+' }
