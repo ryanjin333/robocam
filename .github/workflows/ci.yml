@@ -51,6 +51,21 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v5
+      - name: Run connection activity policy checks
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          source = Path("Rocam/StreamServer.swift").read_text()
+          start = source.index("// CONNECTION_ACTIVITY_POLICY_BEGIN")
+          end = source.index("// CONNECTION_ACTIVITY_POLICY_END", start)
+          policy = source[start:end].replace("// CONNECTION_ACTIVITY_POLICY_BEGIN\n", "")
+          Path(os.environ["RUNNER_TEMP"], "ConnectionActivityPolicy.swift").write_text("import Foundation\n" + policy)
+          PY
+          swiftc "$RUNNER_TEMP/ConnectionActivityPolicy.swift" tests/ConnectionActivityChecks.swift \
+            -o "$RUNNER_TEMP/connection-activity-checks"
+          "$RUNNER_TEMP/connection-activity-checks"
       - name: Verify Xcode 26 SDK and build unsigned iOS 17 app
         run: |
           xcodebuild -version

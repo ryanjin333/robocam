@@ -11,7 +11,10 @@ struct ContentView: View {
     @Namespace private var zoomSelectionNamespace
 
     @State private var showConnection = false
+    @State private var showWiFiInfo = false
     @State private var showConnectionOptions = false
+    @State private var copiedLinkID: String?
+    @State private var copyFeedbackTask: Task<Void, Never>?
     @State private var showCameraSettings = false
     @State private var showZoomSlider = false
     @State private var isEditingCustomOutputSize = false
@@ -32,7 +35,7 @@ struct ContentView: View {
         audio = services.audio
     }
 
-    private var supported: Bool { camera.availableLenses.contains(.lidar) }
+    private var hasRearCamera: Bool { camera.availableLenses.contains(.automatic) }
     private var previewStatusMessage: String? {
         camera.captureMessage ?? camera.errorMessage ?? server.errorMessage
     }
@@ -57,7 +60,7 @@ struct ContentView: View {
     var body: some View {
         if #available(iOS 18.0, *) {
             cameraContent.onCameraCaptureEvent(
-                isEnabled: supported && camera.isRunning && scenePhase == .active &&
+                isEnabled: hasRearCamera && camera.isRunning && scenePhase == .active &&
                     !showConnection && !showCameraSettings
             ) { event in
                 if event.phase == .ended { pressVideoShutter() }
@@ -65,7 +68,7 @@ struct ContentView: View {
         } else if #available(iOS 17.2, *) {
             cameraContent.background {
                 HardwareCaptureInteraction(
-                    isEnabled: supported && camera.isRunning && scenePhase == .active &&
+                isEnabled: hasRearCamera && camera.isRunning && scenePhase == .active &&
                         !showConnection && !showCameraSettings,
                     action: pressVideoShutter
                 )
@@ -79,7 +82,7 @@ struct ContentView: View {
         ZStack {
             Color(red: 0.055, green: 0.06, blue: 0.07).ignoresSafeArea()
             GeometryReader { safeAreaGeometry in
-                if supported {
+                if hasRearCamera {
                     let safeArea = safeAreaGeometry.safeAreaInsets
                     let fullCanvasSize = CGSize(
                         width: safeAreaGeometry.size.width + safeArea.leading + safeArea.trailing,
@@ -111,7 +114,7 @@ struct ContentView: View {
                 } else {
                     VStack(spacing: 10) {
                         Text("Rocam").font(.system(size: 24, weight: .semibold, design: .rounded))
-                        unsupportedCard
+                        cameraUnavailableCard
                         Spacer()
                     }
                     .padding(.horizontal, 16)
@@ -141,7 +144,12 @@ struct ContentView: View {
                         }
                     }
             }
-            .presentationDetents([.large])
+            .presentationDetents([.medium, .large])
+            .alert("Wi-Fi", isPresented: $showWiFiInfo) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Open the Wi-Fi link in a browser on the same network to view your camera.")
+            }
         }
         .sheet(isPresented: $showCameraSettings) {
             NavigationStack {
@@ -163,7 +171,7 @@ struct ContentView: View {
             services.setScreenDimmingForegroundActive(scenePhase == .active)
             services.setScreenDimmingSheetPresented(isPresentingPhoneSheet)
             services.setRecordingActive(camera.isRecording)
-            if supported {
+            if hasRearCamera {
                 camera.requestAccessAndStart()
                 if camera.isRunning { server.start() }
             }
@@ -183,14 +191,14 @@ struct ContentView: View {
                 services.setRecordingActive(false)
                 camera.stopRecording()
                 server.stop(); camera.stop(); audio.stop()
-            } else if phase == .active && supported {
+            } else if phase == .active && hasRearCamera {
                 services.setRecordingActive(camera.isRecording)
                 camera.requestAccessAndStart()
                 if camera.isRunning { server.start() }
             }
         }
         .onChange(of: camera.isRunning) { _, running in
-            guard supported else { return }
+            guard hasRearCamera else { return }
             // A system permission sheet is inactive but still foregrounded.
             if running && scenePhase != .background {
                 server.start()
@@ -199,7 +207,7 @@ struct ContentView: View {
             }
         }
         .onChange(of: camera.isConfiguring) { _, configuring in
-            guard supported, !configuring, !camera.isRunning else { return }
+            guard hasRearCamera, !configuring, !camera.isRunning else { return }
             // A LiDAR graph switch briefly publishes a stopped session before
             // its replacement is ready. Keep the USB listener alive for that
             // intentional handoff, but stop it if configuration finishes down.
@@ -228,9 +236,9 @@ struct ContentView: View {
                 .foregroundStyle(.white)
                 .frame(width: 44, height: 44)
         }
-        .floatingGlass(in: Circle(), interactive: true, tint: server.isRunning ? .green : nil)
-        .animation(controlAnimation, value: server.isRunning)
-        .accessibilityLabel(server.isRunning ? "Connection, live" : "Connection, off")
+        .floatingGlass(in: Circle(), interactive: true, tint: server.isInUse ? .green : nil)
+        .animation(controlAnimation, value: server.isInUse)
+        .accessibilityLabel(server.isInUse ? "Connection, in use" : server.isRunning ? "Connection, ready" : "Connection, off")
     }
 
     private var cameraSettingsButton: some View {
@@ -293,7 +301,7 @@ struct ContentView: View {
                 .animation(controlAnimation, value: previewStatusMessage)
                 .frame(width: layout.previewRect.width)
                 .offset(x: layout.previewRect.minX, y: layout.previewRect.minY + layout.statusTopInset)
-            if supported {
+            if hasRearCamera {
                 bottomControls(layout: layout)
             }
         }
@@ -469,53 +477,67 @@ struct ContentView: View {
     }
 
     private var connectionCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Label("Connection", systemImage: "dot.radiowaves.left.and.right")
-                    .font(.headline)
-                Spacer()
-                Text(server.isRunning ? "Ready" : "Preparing").font(.caption.weight(.semibold))
-                    .foregroundStyle(server.isRunning ? .mint : .secondary)
-            }
-            if services.externalDisplayActive {
-                Label("HDMI camera output is active", systemImage: "display")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.mint)
-                Text("Choose the HDMI capture device in your computer's camera menu.")
-                    .font(.footnote).foregroundStyle(.secondary)
-            }
-            if server.isRunning {
-                Text("Rocam is ready for a trusted USB connection.")
-                    .font(.body.weight(.semibold))
-                Text("Plug in a trusted USB cable, then open Rocam Desktop.")
-                    .font(.footnote).foregroundStyle(.secondary)
-                DisclosureGroup("More connection options", isExpanded: $showConnectionOptions) {
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text("Wi-Fi and HDR connections use manual session links.")
-                            .font(.footnote).foregroundStyle(.secondary)
-                        ForEach(server.addresses) { address in
-                            connectionLink(address.label,
-                                           url: "http://\(address.ip):\(server.port)/?key=\(server.accessKey)",
-                                           copyLabel: "Copy \(address.label) URL")
-                        }
-                        if camera.hdrLiveEnabled {
-                            if let address = server.addresses.first {
-                                connectionLink("10-bit HDR HLS",
-                                               url: "http://\(address.ip):\(server.port)/hdr.m3u8?key=\(server.accessKey)",
-                                               copyLabel: "Copy HDR stream URL")
-                            }
-                            connectionLink("USB port forwarding HDR",
-                                           url: "http://localhost:\(server.port)/hdr.m3u8?key=\(server.accessKey)",
-                                           copyLabel: "Copy USB HDR URL")
-                            Text("Wait a few seconds for HDR segments. Playback requires an HEVC HLS compatible app; the standard viewer remains SDR.")
-                                .font(.footnote).foregroundStyle(.secondary)
-                        }
+                Text("USB")
+                    .font(.footnote.weight(.medium))
+                Spacer(minLength: 0)
+                HStack(spacing: 6) {
+                    Text(server.isUSBConnected ? "Connected" : "Plug in a cable")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    if server.isUSBConnected {
+                        Circle()
+                            .fill(.green)
+                            .frame(width: 6, height: 6)
+                            .accessibilityHidden(true)
                     }
                 }
-                .tint(.mint)
-            } else {
-                Text("Preparing the camera connection. Keep Rocam in the foreground.")
-                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 14)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .floatingGlass(in: Capsule())
+            if services.externalDisplayActive {
+                Label("HDMI", systemImage: "display")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.mint)
+            }
+            if server.isRunning, let wifiLinkURL {
+                wifiConnectionLink(url: wifiLinkURL)
+            }
+            if server.isRunning && hdrLinkCount == 1 {
+                hdrLinkRows
+            } else if server.isRunning && hdrLinkCount > 1 {
+                VStack(alignment: .leading, spacing: 8) {
+                    Button {
+                        withAnimation(controlAnimation) { showConnectionOptions.toggle() }
+                    } label: {
+                        HStack {
+                            Text("Links")
+                                .font(.body.weight(.medium))
+                            Spacer(minLength: 0)
+                            Image(systemName: showConnectionOptions ? "chevron.up" : "chevron.down")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, 14)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .floatingGlass(in: Capsule(), interactive: true)
+                    .accessibilityLabel("Links")
+                    .accessibilityValue(showConnectionOptions ? "Expanded" : "Collapsed")
+                    .accessibilityHint("Shows connection links")
+
+                    if showConnectionOptions {
+                        VStack(alignment: .leading, spacing: 8) {
+                            hdrLinkRows
+                        }
+                        .transition(statusTransition)
+                    }
+                }
+                .animation(controlAnimation, value: showConnectionOptions)
             }
             if let message = server.errorMessage ?? camera.errorMessage {
                 Text(message).font(.footnote).foregroundStyle(.orange)
@@ -524,18 +546,105 @@ struct ContentView: View {
         .card()
     }
 
-    private func connectionLink(_ title: String, url: String, copyLabel: String) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "link").foregroundStyle(.mint)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.footnote.weight(.semibold))
-                Text(url).font(.system(.footnote, design: .monospaced)).textSelection(.enabled)
+    private var wifiLinkURL: String? {
+        guard let wifiAddress = server.addresses.first(where: { $0.interface == "en0" }) else { return nil }
+        return "http://\(wifiAddress.ip):\(server.port)/?key=\(server.accessKey)"
+    }
+
+    private var hdrLinkCount: Int {
+        guard camera.hdrLiveEnabled else { return 0 }
+        return server.addresses.isEmpty ? 1 : 2
+    }
+
+    @ViewBuilder
+    private var hdrLinkRows: some View {
+        if let address = server.addresses.first {
+            connectionLink("HDR",
+                           url: "http://\(address.ip):\(server.port)/hdr.m3u8?key=\(server.accessKey)",
+                           id: "hdr")
+        }
+        connectionLink("USB HDR",
+                       url: "http://localhost:\(server.port)/hdr.m3u8?key=\(server.accessKey)",
+                       id: "usb-hdr")
+    }
+
+    private func connectionLink(_ title: String, url: String, id: String) -> some View {
+        let wasCopied = copiedLinkID == id
+        return Button {
+            copyLink(url, id: id)
+        } label: {
+            HStack(spacing: 10) {
+                Text(title)
+                    .font(.footnote.weight(.medium))
+                Spacer(minLength: 0)
+                HStack(spacing: 4) {
+                    Text(wasCopied ? "Copied" : "Copy")
+                    Image(systemName: wasCopied ? "checkmark" : "doc.on.doc")
+                        .font(.system(size: 11, weight: .semibold))
+                }
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 14)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .floatingGlass(in: Capsule(), interactive: true)
+        .accessibilityLabel(wasCopied ? "\(title) link copied" : "Copy \(title) link")
+        .accessibilityHint("Copies the connection link")
+    }
+
+    private func wifiConnectionLink(url: String) -> some View {
+        let wasCopied = copiedLinkID == "camera"
+        return HStack(spacing: 0) {
+            HStack(spacing: 4) {
+                Text("Wi-Fi")
+                    .font(.footnote.weight(.medium))
+                Button {
+                    showWiFiInfo = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 44, height: 44, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("About the Wi-Fi link")
+                .accessibilityHint("Explains how to open the camera preview")
             }
             Spacer(minLength: 0)
-            Button { UIPasteboard.general.string = url } label: { Image(systemName: "doc.on.doc") }
-                .frame(width: 36, height: 36)
-                .floatingGlass(in: Circle(), interactive: true)
-                .accessibilityLabel(copyLabel)
+            Button {
+                copyLink(url, id: "camera")
+            } label: {
+                HStack(spacing: 4) {
+                    Text(wasCopied ? "Copied" : "Copy")
+                    Image(systemName: wasCopied ? "checkmark" : "doc.on.doc")
+                        .font(.system(size: 11, weight: .semibold))
+                }
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(wasCopied ? "Wi-Fi link copied" : "Copy Wi-Fi link")
+            .accessibilityHint("Copies the connection link")
+        }
+        .padding(.horizontal, 14)
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .floatingGlass(in: Capsule(), interactive: true)
+    }
+
+    private func copyLink(_ url: String, id: String) {
+        UIPasteboard.general.string = url
+        copyFeedbackTask?.cancel()
+        copiedLinkID = id
+        copyFeedbackTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            guard !Task.isCancelled, copiedLinkID == id else { return }
+            copiedLinkID = nil
         }
     }
 
@@ -596,18 +705,20 @@ struct ContentView: View {
             .onAppear { populateCustomOutputFields() }
         }
 
-        Toggle("Turn on LiDAR", isOn: Binding(
-            get: { camera.activeLens == .lidar },
-            set: { selectVideoCamera(lidarEnabled: $0, quality: camera.activeQuality) }
-        ))
-        .disabled(camera.isRecording || !supported)
+        if camera.availableLenses.contains(.lidar) {
+            Toggle("Turn on LiDAR", isOn: Binding(
+                get: { camera.activeLens == .lidar },
+                set: { selectVideoCamera(lidarEnabled: $0, quality: camera.activeQuality) }
+            ))
+            .disabled(camera.isRecording)
+        }
     }
 
-    private var unsupportedCard: some View {
+    private var cameraUnavailableCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("LiDAR iPhone or iPad required", systemImage: "ipad.and.iphone")
+            Label("Rear camera unavailable", systemImage: "camera")
                 .font(.headline)
-            Text("Rocam supports iPhone 12 Pro and newer Pro models, and iPad Pro models, with a rear LiDAR camera.")
+            Text("Rocam needs a rear camera.")
                 .font(.footnote).foregroundStyle(.secondary)
         }
         .card()
