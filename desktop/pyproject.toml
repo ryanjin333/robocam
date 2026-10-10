@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rocam-webcam"
+version = "0.1.0"
+description = "Publish a Rocam iPhone MJPEG feed as a desktop virtual webcam"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.24",
+  "Pillow>=10",
+  "pyvirtualcam>=0.14",
+]
+
+[project.optional-dependencies]
+audio = ["sounddevice"]
+video = ["av>=14"]
+build = ["pyinstaller>=6"]
+
+[project.scripts]
+rocam-webcam = "rocam_receiver:main"
+
+[project.gui-scripts]
+rocam-desktop = "rocam_desktop:main"
+
+[tool.setuptools]
+py-modules = ["rocam_receiver", "rocam_audio", "rocam_desktop", "rocam_video", "rocam_robot", "rocam_v4l2"]

@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  desktop-tests:
+    name: desktop tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+          - os: macos-26
+          - os: windows-2025
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install desktop dependencies
+        run: python -m pip install './[audio,video,build]'
+      - name: Run desktop unit tests
+        run: python -m unittest discover -s tests -v
+
+  ios-unsigned-build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify Xcode 26 SDK and build unsigned iOS 17 app
+        run: |
+          xcodebuild -version
+          xcodebuild -showsdks | grep -q iphoneos
+          xcodebuild -project Rocam.xcodeproj -scheme Rocam -sdk iphoneos -configuration Release \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+
+  desktop-artifacts:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            artifact: rocam-desktop-linux
+          - os: macos-26
+            artifact: rocam-desktop-macos
+          - os: windows-2025
+            artifact: rocam-desktop-windows
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Linux GUI build dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y python3-tk libportaudio2 ffmpeg
+      - name: Install build dependencies
+        working-directory: desktop
+        run: python -m pip install './[audio,video,build]'
+      - name: Build Rocam Desktop
+        working-directory: desktop
+        run: python build_app.py
+      - name: Package Linux app
+        if: runner.os == 'Linux'
+        run: tar -C desktop/dist/app -czf desktop/dist/RocamDesktop-linux-x86_64.tar.gz RocamDesktop
+      - name: Package macOS app
+        if: runner.os == 'macOS'
+        run: ditto -c -k --sequesterRsrc --keepParent desktop/dist/app/RocamDesktop.app desktop/dist/RocamDesktop-macOS.zip
+      - name: Prepare MSYS2 USB tools
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        id: msys2
+        with:
+          msystem: MINGW64
+          location: D:\a\msys64
+          update: true
+          install: >-
+            mingw-w64-x86_64-libusbmuxd
+            mingw-w64-x86_64-binutils
+      - name: Package Windows app and USB tools
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          MSYS_ROOT: ${{ steps.msys2.outputs.msys2-location }}
+        run: |
+          $env:PATH = "$env:MSYS_ROOT\mingw64\bin;$env:PATH"
+          ./desktop/package_windows_usb.ps1 -MsysRoot $env:MSYS_ROOT -OutputDirectory './desktop/dist/windows-package'
+          Compress-Archive -Path './desktop/dist/app/RocamDesktop' -DestinationPath './desktop/dist/RocamDesktop-windows-x86_64.zip'
+          Compress-Archive -Path './desktop/dist/windows-package/*' -DestinationPath './desktop/dist/RocamUSBTools-windows-x86_64.zip'
+      - name: Build source distributions
+        if: runner.os == 'Linux'
+        working-directory: desktop
+        run: python -m pip install build && python -m pip wheel --no-deps --wheel-dir dist . && python -m build --sdist --outdir dist .
+      - name: Upload platform artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: desktop/dist/
+          if-no-files-found: error

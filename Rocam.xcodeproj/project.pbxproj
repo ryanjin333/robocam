@@ -1,0 +1,354 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		09707BEBE2934AAB5D0A86E7 /* AudioCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 137C4581FEC1C4905097CC56 /* AudioCapture.swift */; };
+		1B973362DC241F1E6987AB02 /* RocamApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A2BBFB80C440EEBE4F1332E /* RocamApp.swift */; };
+		696C00EC333BC003F7C5A2D0 /* StreamServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EA4025E89B6CD342C6EDD44 /* StreamServer.swift */; };
+		70C64EAB9A77CF4380C6FFA5 /* AppIcon60x60@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E2F1386C73D49E38E9428A73 /* AppIcon60x60@2x.png */; };
+		739053E149B1A52A6997AA94 /* AppServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = C136121AF240374640E5E178 /* AppServices.swift */; };
+		8CE155F3EC873E37394F732F /* AppIcon60x60@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 9C0260D641FEC7AFD59AE4BD /* AppIcon60x60@3x.png */; };
+		942132E24FF457DA10D57054 /* CameraService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E4F62A91C866D21CFA62DBC /* CameraService.swift */; };
+		A4B2101947574446A89C6D1C /* HDRStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4629DA916E5DBA05103BA376 /* HDRStream.swift */; };
+		B54F97BF809BC1860139950E /* ExternalDisplaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BB9284E15D27296920A5283 /* ExternalDisplaySceneDelegate.swift */; };
+		C76D064DACB66A301BF1A5E9 /* EncodedStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1521A99F0A3308888E82E419 /* EncodedStream.swift */; };
+		CFC4FF1D609999EA209E4E89 /* FrameStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 327E3A49697F791E5F80BCA7 /* FrameStore.swift */; };
+		D87CAFE22275C150F4C16168 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0ED3FB41B3A7934B49F00C7 /* ContentView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		137C4581FEC1C4905097CC56 /* AudioCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCapture.swift; sourceTree = "<group>"; };
+		1521A99F0A3308888E82E419 /* EncodedStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncodedStream.swift; sourceTree = "<group>"; };
+		1BB9284E15D27296920A5283 /* ExternalDisplaySceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalDisplaySceneDelegate.swift; sourceTree = "<group>"; };
+		1E4F62A91C866D21CFA62DBC /* CameraService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraService.swift; sourceTree = "<group>"; };
+		223D7E2507A86BB7263EF6A0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		327E3A49697F791E5F80BCA7 /* FrameStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameStore.swift; sourceTree = "<group>"; };
+		3A2BBFB80C440EEBE4F1332E /* RocamApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RocamApp.swift; sourceTree = "<group>"; };
+		4629DA916E5DBA05103BA376 /* HDRStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDRStream.swift; sourceTree = "<group>"; };
+		9C0260D641FEC7AFD59AE4BD /* AppIcon60x60@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon60x60@3x.png"; sourceTree = "<group>"; };
+		9EA4025E89B6CD342C6EDD44 /* StreamServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamServer.swift; sourceTree = "<group>"; };
+		C136121AF240374640E5E178 /* AppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServices.swift; sourceTree = "<group>"; };
+		D0ED3FB41B3A7934B49F00C7 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		E2F1386C73D49E38E9428A73 /* AppIcon60x60@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon60x60@2x.png"; sourceTree = "<group>"; };
+		E5CF98AFA0648E7A8CA142C6 /* Rocam.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Rocam.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		6787E147894F95305A390CC4 = {
+			isa = PBXGroup;
+			children = (
+				DB4347F89AC733DD12A00091 /* Rocam */,
+				972568F92341816D43E56C41 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		90F710BE451900C80853CC1B /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				E2F1386C73D49E38E9428A73 /* AppIcon60x60@2x.png */,
+				9C0260D641FEC7AFD59AE4BD /* AppIcon60x60@3x.png */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		972568F92341816D43E56C41 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E5CF98AFA0648E7A8CA142C6 /* Rocam.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		DB4347F89AC733DD12A00091 /* Rocam */ = {
+			isa = PBXGroup;
+			children = (
+				C136121AF240374640E5E178 /* AppServices.swift */,
+				137C4581FEC1C4905097CC56 /* AudioCapture.swift */,
+				1E4F62A91C866D21CFA62DBC /* CameraService.swift */,
+				D0ED3FB41B3A7934B49F00C7 /* ContentView.swift */,
+				1521A99F0A3308888E82E419 /* EncodedStream.swift */,
+				1BB9284E15D27296920A5283 /* ExternalDisplaySceneDelegate.swift */,
+				327E3A49697F791E5F80BCA7 /* FrameStore.swift */,
+				4629DA916E5DBA05103BA376 /* HDRStream.swift */,
+				223D7E2507A86BB7263EF6A0 /* Info.plist */,
+				3A2BBFB80C440EEBE4F1332E /* RocamApp.swift */,
+				9EA4025E89B6CD342C6EDD44 /* StreamServer.swift */,
+				90F710BE451900C80853CC1B /* Resources */,
+			);
+			path = Rocam;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F88C440C5566EFE7680943AC /* Rocam */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6E863367FCEF1971779D5E05 /* Build configuration list for PBXNativeTarget "Rocam" */;
+			buildPhases = (
+				13AFC5319EA2067BE9C839DB /* Sources */,
+				234A392198B11AB4C082546F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Rocam;
+			packageProductDependencies = (
+			);
+			productName = Rocam;
+			productReference = E5CF98AFA0648E7A8CA142C6 /* Rocam.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1F2ECCF7A2EBBA584555084B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					F88C440C5566EFE7680943AC = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = ED63676EA400EE201B092CEA /* Build configuration list for PBXProject "Rocam" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 6787E147894F95305A390CC4;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 972568F92341816D43E56C41 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F88C440C5566EFE7680943AC /* Rocam */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		234A392198B11AB4C082546F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				70C64EAB9A77CF4380C6FFA5 /* AppIcon60x60@2x.png in Resources */,
+				8CE155F3EC873E37394F732F /* AppIcon60x60@3x.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		13AFC5319EA2067BE9C839DB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				739053E149B1A52A6997AA94 /* AppServices.swift in Sources */,
+				09707BEBE2934AAB5D0A86E7 /* AudioCapture.swift in Sources */,
+				942132E24FF457DA10D57054 /* CameraService.swift in Sources */,
+				D87CAFE22275C150F4C16168 /* ContentView.swift in Sources */,
+				C76D064DACB66A301BF1A5E9 /* EncodedStream.swift in Sources */,
+				B54F97BF809BC1860139950E /* ExternalDisplaySceneDelegate.swift in Sources */,
+				CFC4FF1D609999EA209E4E89 /* FrameStore.swift in Sources */,
+				A4B2101947574446A89C6D1C /* HDRStream.swift in Sources */,
+				1B973362DC241F1E6987AB02 /* RocamApp.swift in Sources */,
+				696C00EC333BC003F7C5A2D0 /* StreamServer.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		2FE6FA80B5835A435A31D2B1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		85B970DAB4CFDE09E00F7B39 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = Rocam/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.rocam.camera;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		9EBEF21419B8DCE2B5447F68 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AA854770C0AD9AC54DD41B5B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = Rocam/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.rocam.camera;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		6E863367FCEF1971779D5E05 /* Build configuration list for PBXNativeTarget "Rocam" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA854770C0AD9AC54DD41B5B /* Debug */,
+				85B970DAB4CFDE09E00F7B39 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		ED63676EA400EE201B092CEA /* Build configuration list for PBXProject "Rocam" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9EBEF21419B8DCE2B5447F68 /* Debug */,
+				2FE6FA80B5835A435A31D2B1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 1F2ECCF7A2EBBA584555084B /* Project object */;
+}

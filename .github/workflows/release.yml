@@ -1,0 +1,101 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: sudo apt-get update && sudo apt-get install -y python3-tk libportaudio2 ffmpeg
+      - name: Build Linux app and source packages
+        working-directory: desktop
+        run: |
+          python -m pip install './[audio,video,build]' build
+          python build_app.py
+          tar -C dist/app -czf dist/RocamDesktop-linux-x86_64.tar.gz RocamDesktop
+          python -m build --sdist --wheel --outdir dist .
+      - run: mkdir -p release-assets && cp desktop/dist/RocamDesktop-linux-x86_64.tar.gz desktop/dist/rocam_webcam-* desktop/install_linux.py desktop/setup_linux.py desktop/setup_macos.sh desktop/setup_windows.ps1 release-assets/
+      - uses: actions/upload-artifact@v4
+        with: { name: release-linux, path: release-assets/, if-no-files-found: error }
+
+  macos:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Build macOS app
+        working-directory: desktop
+        run: |
+          python -m pip install './[audio,video,build]'
+          python build_app.py
+          ditto -c -k --sequesterRsrc --keepParent dist/app/RocamDesktop.app dist/RocamDesktop-macOS.zip
+      - uses: actions/upload-artifact@v4
+        with: { name: release-macos, path: desktop/dist/RocamDesktop-macOS.zip, if-no-files-found: error }
+
+  windows:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Install desktop dependencies and build Windows app
+        working-directory: desktop
+        run: |
+          python -m pip install './[audio,video,build]'
+          python build_app.py
+          python -m pip wheel --no-deps --wheel-dir dist .
+      - uses: msys2/setup-msys2@v2
+        id: msys2
+        with:
+          msystem: MINGW64
+          location: D:\a\msys64
+          update: true
+          install: >-
+            mingw-w64-x86_64-libusbmuxd
+            mingw-w64-x86_64-binutils
+      - name: Package Windows app, setup, wheel, and USB tools
+        shell: pwsh
+        env:
+          MSYS_ROOT: ${{ steps.msys2.outputs.msys2-location }}
+        run: |
+          $env:PATH = "$env:MSYS_ROOT\mingw64\bin;$env:PATH"
+          ./desktop/package_windows_usb.ps1 -MsysRoot $env:MSYS_ROOT -OutputDirectory './desktop/dist/windows-package'
+          New-Item -ItemType Directory -Force -Path './desktop/dist/windows-release' | Out-Null
+          Copy-Item './desktop/dist/app/RocamDesktop' './desktop/dist/windows-release/RocamDesktop' -Recurse
+          Copy-Item './desktop/dist/windows-package/*' './desktop/dist/windows-release/' -Recurse
+          Copy-Item './desktop/setup_windows.ps1' './desktop/dist/windows-release/'
+          Copy-Item './desktop/dist/rocam_webcam-*.whl' './desktop/dist/windows-release/'
+          Compress-Archive -Path './desktop/dist/windows-release/*' -DestinationPath './desktop/dist/RocamDesktop-windows-x86_64.zip'
+          Compress-Archive -Path './desktop/dist/windows-package/*' -DestinationPath './desktop/dist/RocamUSBTools-windows-x86_64.zip'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: |
+            desktop/dist/RocamDesktop-windows-x86_64.zip
+            desktop/dist/RocamUSBTools-windows-x86_64.zip
+          if-no-files-found: error
+
+  publish:
+    needs: [linux, macos, windows]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with: { path: release-assets, merge-multiple: true }
+      - name: Prepare checksums
+        run: (cd release-assets && sha256sum * > checksums-sha256.txt)
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" release-assets/* --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes --title "$GITHUB_REF_NAME"

@@ -1,0 +1,3 @@
+include build_app.py
+include install_linux.py
+include pyi_rth_portaudio.py
