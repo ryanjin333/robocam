@@ -11,7 +11,7 @@ The app and camera may be called **Rocam**. That name is kept for compatibility.
 
 You do these two setup steps once.
 
-1. **Set up the iPhone.** Open `Rocam.xcodeproj` in Xcode. Choose your Apple
+1. **Set up the iPhone on a Mac.** Open `Rocam.xcodeproj` in Xcode. Choose your Apple
    Team, select your real iPhone, and press **Run**. Open the app on the phone.
 
 2. **Set up the computer.** Download the official **Source code (zip)** from
@@ -38,8 +38,8 @@ Homebrew.
 3. Keep the RoboCam app open.
 
 The computer connects by itself and sends video at 20 frames per second. There
-is no **Start stream** button. In your video app, choose **Rocam** as the
-camera.
+is no **Start stream** button. In your video app, choose **Rocam** on Linux, or
+**OBS Virtual Camera** on macOS and Windows.
 
 The microphone is off by default. RoboCam uses USB for this connection.
 
