@@ -21,6 +21,65 @@ $sources = Join-Path $OutputDirectory 'sources'
 New-Item -ItemType Directory -Force -Path $destination, $licenses, $sources | Out-Null
 Copy-Item -LiteralPath $iproxy -Destination $destination
 
+function Get-TarEntries([string]$Archive) {
+    $entries = & $bsdtar -tf $Archive
+    if ($LASTEXITCODE -ne 0) { throw "could not list $Archive" }
+    return @($entries)
+}
+
+function Export-TarMember([string]$Archive, [string]$Member, [string]$Destination) {
+    $start = [Diagnostics.ProcessStartInfo]::new()
+    $start.FileName = $bsdtar
+    $start.UseShellExecute = $false
+    $start.RedirectStandardOutput = $true
+    $start.RedirectStandardError = $true
+    foreach ($argument in @('-xOf', $Archive, $Member)) { [void]$start.ArgumentList.Add($argument) }
+    $process = [Diagnostics.Process]::Start($start)
+    try {
+        $stream = [IO.File]::Open($Destination, [IO.FileMode]::Create, [IO.FileAccess]::Write)
+        try { $process.StandardOutput.BaseStream.CopyTo($stream) } finally { $stream.Dispose() }
+        $errorText = $process.StandardError.ReadToEnd()
+        $process.WaitForExit()
+        if ($process.ExitCode -ne 0) { throw "could not extract $Member from ${Archive}: $errorText" }
+    } finally { $process.Dispose() }
+}
+
+function Copy-SourceLicense([string]$Archive, [string]$Package) {
+    $queue = [Collections.Generic.Queue[object]]::new()
+    $queue.Enqueue([pscustomobject]@{ archive = $Archive; depth = 0; temporary = $false })
+    $nestedCount = 0
+    $licenseCount = 0
+    $temporaryRoot = Join-Path $env:TEMP "rocam-source-$PID-$([guid]::NewGuid().ToString('N'))"
+    New-Item -ItemType Directory -Path $temporaryRoot | Out-Null
+    try {
+        while ($queue.Count) {
+            $current = $queue.Dequeue()
+            foreach ($entry in (Get-TarEntries $current.archive)) {
+                if ($entry -match '(^|/)(COPYING[^/]*|LICENSE[^/]*)$') {
+                    $name = $entry -replace '^.*/', ''
+                    if ($name -notmatch '^(COPYING|LICENSE)[A-Za-z0-9._-]*$') { continue }
+                    $target = Join-Path $licenses "$Package\\source-$licenseCount-$name"
+                    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null
+                    Export-TarMember $current.archive $entry $target
+                    $licenseCount++
+                }
+            }
+            if ($licenseCount -gt 0) { return $true }
+            if ($current.depth -ge 1) { continue }
+            foreach ($entry in (Get-TarEntries $current.archive | Where-Object { $_ -match '\.tar(?:\.(?:bz2|gz|xz|zst))?$' })) {
+                if (++$nestedCount -gt 8) { throw "too many nested source archives for $Package" }
+                $temporary = Join-Path $temporaryRoot "$nestedCount.tar"
+                Export-TarMember $current.archive $entry $temporary
+                if ((Get-Item -LiteralPath $temporary).Length -gt 64MB) { throw "nested source archive is too large for $Package" }
+                $queue.Enqueue([pscustomobject]@{ archive = $temporary; depth = $current.depth + 1; temporary = $true })
+            }
+        }
+        return $false
+    } finally {
+        Remove-Item -LiteralPath $temporaryRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
 # Follow only PE DLL dependencies already installed in this dedicated MSYS2 root.
 $queue = [Collections.Generic.Queue[string]]::new()
 $queue.Enqueue($iproxy)
@@ -94,13 +153,7 @@ foreach ($package in $packageRecords.Keys | Sort-Object) {
         }
     }
     if (-not $copiedLicense) {
-        $sourceLicenses = & $bsdtar -tf $archivePath | Where-Object { $_ -match '(^|/)(COPYING|COPYING\.LIB|LICENSE[^/]*)$' }
-        if ($LASTEXITCODE -ne 0 -or -not $sourceLicenses) { throw "no license text was found for $package" }
-        foreach ($sourceLicense in $sourceLicenses) {
-            $target = Join-Path $licenses "$package\$(Split-Path -Leaf $sourceLicense)"
-            & $bsdtar -xOf $archivePath $sourceLicense | Set-Content -LiteralPath $target -Encoding utf8
-            if ($LASTEXITCODE -ne 0) { throw "could not extract license text for $package" }
-        }
+        if (-not (Copy-SourceLicense $archivePath $package)) { throw "no license text was found for $package" }
     }
 }
 

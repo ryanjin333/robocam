@@ -7,13 +7,17 @@ import plistlib
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import unittest
+from io import BytesIO
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
 MAC_SETUP = ROOT / "desktop/setup_macos.sh"
+MSYS2_BSDTAR = Path(os.environ.get("MSYS2_ROOT", "")) / "usr/bin/bsdtar.exe"
+BSDTAR = shutil.which("bsdtar") or (str(MSYS2_BSDTAR) if MSYS2_BSDTAR.is_file() else None)
 
 
 @unittest.skipUnless(sys.platform != "win32", "macOS shell transaction tests are not portable to Windows")
@@ -126,6 +130,34 @@ class DistributionWorkflowTests(unittest.TestCase):
         self.assertNotIn("workflow_dispatch", release)
         self.assertIn("--verify-tag", release)
         self.assertIn("contents: write", release)
+
+    @unittest.skipUnless(BSDTAR, "bsdtar is unavailable")
+    def test_nested_msys2_source_fixture_contains_extractable_license_text(self):
+        """MSYS2 source archives can wrap the upstream tarball that has COPYING."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            nested = root / "upstream.tar.bz2"
+            with tarfile.open(nested, "w:bz2") as archive:
+                license_data = b"sample LGPL text\n"
+                entry = tarfile.TarInfo("upstream-1.0/COPYING.LESSER")
+                entry.size = len(license_data)
+                archive.addfile(entry, BytesIO(license_data))
+            outer = root / "mingw-source.tar"
+            with tarfile.open(outer, "w") as archive:
+                archive.add(nested, arcname="mingw-package/upstream.tar.bz2")
+
+            listed = subprocess.run([BSDTAR, "-tf", outer], text=True, capture_output=True, check=True)
+            self.assertIn("mingw-package/upstream.tar.bz2", listed.stdout)
+            extracted = root / "nested.tar.bz2"
+            with extracted.open("wb") as output:
+                subprocess.run([BSDTAR, "-xOf", outer, "mingw-package/upstream.tar.bz2"], stdout=output, check=True)
+            nested_listing = subprocess.run([BSDTAR, "-tf", extracted], text=True, capture_output=True, check=True)
+            self.assertIn("upstream-1.0/COPYING.LESSER", nested_listing.stdout)
+
+        packager = (ROOT / "desktop/package_windows_usb.ps1").read_text(encoding="utf-8")
+        self.assertIn("Copy-SourceLicense", packager)
+        self.assertIn("RedirectStandardOutput", packager)
+        self.assertIn("$current.depth -ge 1", packager)
 
     @unittest.skipUnless(shutil.which("pwsh"), "PowerShell is unavailable")
     def test_windows_scripts_parse_in_powershell(self):
