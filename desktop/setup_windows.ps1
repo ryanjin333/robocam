@@ -10,7 +10,7 @@ $Marker = ':: Managed by Rocam setup_windows.ps1'
 $DataDir = Join-Path $env:LOCALAPPDATA 'Rocam'
 $StartupFile = Join-Path ([Environment]::GetFolderPath('Startup')) 'Rocam USB Receiver.cmd'
 $ScriptDir = Split-Path -Parent $PSCommandPath
-$ReleaseApi = 'https://api.github.com/repos/ryanjin333/robocam/releases/latest'
+$ReleaseApi = 'https://api.github.com/repos/ryanjin333/rocam/releases/latest'
 
 function Fail([string]$Message) { throw "Rocam setup: $Message" }
 function Invoke-Checked([scriptblock]$Action, [string]$Name) {

@@ -1,4 +1,4 @@
-# RoboCam feature matrix
+# Rocam feature matrix
 
 | Feature | Linux | macOS | Windows |
 | --- | --- | --- | --- |

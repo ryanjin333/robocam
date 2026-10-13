@@ -1,4 +1,4 @@
-# RoboCam next steps
+# Rocam next steps
 
 - Run the first GitHub Actions builds after the public repository is pushed.
 - Test the macOS bundle with a trusted phone, OBS Virtual Camera, reconnect, and

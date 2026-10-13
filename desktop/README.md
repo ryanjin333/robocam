@@ -1,6 +1,6 @@
-# RoboCam desktop
+# Rocam desktop
 
-The desktop receiver publishes the RoboCam phone feed as a virtual camera. The
+The desktop receiver publishes the Rocam phone feed as a virtual camera. The
 GUI starts USB mode automatically. The command-line equivalent is:
 
 ```sh
@@ -8,7 +8,7 @@ rocam-webcam --usb --fps 20
 ```
 
 USB mode needs `iproxy` and never falls back to Wi-Fi. The phone must be
-connected, unlocked, trusted, and running RoboCam. A selected device can be
+connected, unlocked, trusted, and running Rocam. A selected device can be
 given with `--udid DEVICE_ID`.
 
 ## Install and build
@@ -52,5 +52,5 @@ over the localhost USB tunnel and can be decoded with
 the frame includes calibration metadata.
 
 The optional `audio` extra supports a named desktop audio output, but no setup
-script enables it. RoboCam does not ask for or forward phone microphone audio
+script enables it. Rocam does not ask for or forward phone microphone audio
 unless the user explicitly configures that feature.

@@ -1,11 +1,9 @@
-# RoboCam
+# Rocam
 
 Turn your iPhone into a USB webcam, with optional LiDAR depth.
 
 LiDAR is a sensor that helps the phone see how far things are from it. Your
 iPhone may show this as a depth view when it has LiDAR.
-
-The app and camera may be called **Rocam**. That name is kept for compatibility.
 
 ## Set it up with an AI agent
 
@@ -13,7 +11,7 @@ Give this prompt to a coding agent with access to your computer, such as Codex
 or Claude Code:
 
 ```text
-Set up RoboCam from https://github.com/ryanjin333/robocam so I can use my
+Set up Rocam from https://github.com/ryanjin333/rocam so I can use my
 iPhone as a USB webcam on this computer.
 
 Clone the repository if needed, then read README.md, desktop/README.md,
@@ -37,7 +35,7 @@ then stopping OBS Virtual Camera once. On Windows, complete the normal OBS
 Virtual Camera setup. Preserve unrelated camera and startup configurations.
 
 Verify the receiver is running and configured to start at login. With the
-iPhone connected by USB, unlocked, trusted, and running RoboCam, verify live
+iPhone connected by USB, unlocked, trusted, and running Rocam, verify live
 video in a camera app: select Rocam on Linux or OBS Virtual Camera on macOS
 and Windows. Keep session keys private. Report what you verified and any
 remaining manual steps; do not claim the camera works without a live check.
@@ -55,7 +53,7 @@ You do these two setup steps once.
    Team, select your real iPhone, and press **Run**. Open the app on the phone.
 
 2. **Set up the computer.** Download the official **Source code (zip)** from
-   the [GitHub releases page](https://github.com/ryanjin333/robocam/releases),
+   the [GitHub releases page](https://github.com/ryanjin333/rocam/releases),
    and extract the full repository. Then run the command for your computer:
 
    - Linux: `python3 desktop/setup_linux.py`
@@ -75,13 +73,13 @@ Homebrew.
 
 1. Connect the iPhone to the computer with a USB cable.
 2. Unlock the iPhone and tap **Trust** if the iPhone asks.
-3. Keep the RoboCam app open.
+3. Keep the Rocam app open.
 
 The computer connects by itself and sends video at 20 frames per second. There
 is no **Start stream** button. In your video app, choose **Rocam** on Linux, or
 **OBS Virtual Camera** on macOS and Windows.
 
-The microphone is off by default. RoboCam uses USB for this connection.
+The microphone is off by default. Rocam uses USB for this connection.
 
 ## More information
 
