@@ -33,6 +33,11 @@ Rocam requires iOS 17 or later. LiDAR depth requires an [iPhone 12 Pro or
 iPhone 12 Pro Max](https://support.apple.com/en-us/111875), or a newer Pro
 model. RGB-only video also works on supported non-Pro iPhones.
 
+## Computer platforms
+
+- macOS
+- Linux (Ubuntu and Debian)
+
 ## Set it up with an AI agent
 
 Paste this into Codex or Claude Code:
