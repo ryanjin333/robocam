@@ -95,3 +95,7 @@ can limit the available choices; higher FPS may require turning LiDAR off.
 
 See the [desktop guide](desktop/README.md) for computer details and the
 [feature matrix](FEATURE_MATRIX.md) for platform details.
+
+## License
+
+Released under the [MIT License](LICENSE).
