@@ -1,0 +1,79 @@
+// !$*UTF8*$!
+{
+ archiveVersion = 1; classes = {}; objectVersion = 56;
+ objects = {
+/* Begin PBXBuildFile section */
+  A001 /* RocamApp.swift */ = {isa = PBXBuildFile; fileRef = A101; };
+  A002 /* USBTransport.swift */ = {isa = PBXBuildFile; fileRef = A102; };
+  A003 /* CameraBridge.swift */ = {isa = PBXBuildFile; fileRef = A103; };
+  A004 /* Shared.swift */ = {isa = PBXBuildFile; fileRef = A104; };
+  A005 /* USBProtocol.swift */ = {isa = PBXBuildFile; fileRef = A105; };
+  A006 /* SystemExtensions.framework */ = {isa = PBXBuildFile; fileRef = A106; };
+  A007 /* CoreMediaIO.framework */ = {isa = PBXBuildFile; fileRef = A107; };
+  A1011 /* CameraProvider.swift */ = {isa = PBXBuildFile; fileRef = A1101; };
+  A1012 /* extension main.swift */ = {isa = PBXBuildFile; fileRef = A1102; };
+  A1013 /* extension Shared.swift */ = {isa = PBXBuildFile; fileRef = A104; };
+  A201 /* com.rocam.desktop.CameraExtension.systemextension in Embed */ = {isa = PBXBuildFile; fileRef = A301; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+/* Begin PBXContainerItemProxy section */
+  A202 = {isa = PBXContainerItemProxy; containerPortal = A900; proxyType = 1; remoteGlobalIDString = A911; remoteInfo = RocamCameraExtension; };
+/* End PBXContainerItemProxy section */
+/* Begin PBXCopyFilesBuildPhase section */
+  A203 = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = "Contents/Library/SystemExtensions"; dstSubfolderSpec = 1; files = (A201,); name = "Embed System Extensions"; runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXCopyFilesBuildPhase section */
+/* Begin PBXFileReference section */
+  A101 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RocamApp.swift; sourceTree = "<group>"; };
+  A102 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USBTransport.swift; sourceTree = "<group>"; };
+  A103 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraBridge.swift; sourceTree = "<group>"; };
+  A104 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared.swift; sourceTree = "<group>"; };
+  A105 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ../Transport/Sources/RocamUSB/USBProtocol.swift; sourceTree = "<group>"; };
+  A106 = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemExtensions.framework; path = System/Library/Frameworks/SystemExtensions.framework; sourceTree = SDKROOT; };
+  A107 = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMediaIO.framework; path = System/Library/Frameworks/CoreMediaIO.framework; sourceTree = SDKROOT; };
+  A108 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+  A109 = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Rocam.entitlements; sourceTree = "<group>"; };
+  A1101 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraProvider.swift; sourceTree = "<group>"; };
+  A1102 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+  A1103 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+  A1104 = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RocamCameraExtension.entitlements; sourceTree = "<group>"; };
+  A301 = {isa = PBXFileReference; explicitFileType = wrapper.system-extension; includeInIndex = 0; path = com.rocam.desktop.CameraExtension.systemextension; sourceTree = BUILT_PRODUCTS_DIR; };
+  A302 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Rocam.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+/* Begin PBXFrameworksBuildPhase section */
+  A401 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A006, A007); runOnlyForDeploymentPostprocessing = 0; };
+  A402 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A007,); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+/* Begin PBXGroup section */
+  A900 = {isa = PBXProject; buildConfigurationList = A950; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base,); mainGroup = A901; productRefGroup = A902; projectDirPath = ""; projectRoot = ""; targets = (A910, A911,); };
+  A901 = {isa = PBXGroup; children = (A903, A904, A902,); sourceTree = "<group>"; };
+  A902 = {isa = PBXGroup; children = (A302, A301,); name = Products; sourceTree = "<group>"; };
+  A903 = {isa = PBXGroup; children = (A101, A102, A103, A104, A105, A108, A109, A106, A107,); path = Rocam; sourceTree = "<group>"; };
+  A904 = {isa = PBXGroup; children = (A1101, A1102, A1103, A1104,); path = RocamCameraExtension; sourceTree = "<group>"; };
+/* End PBXGroup section */
+/* Begin PBXNativeTarget section */
+  A910 = {isa = PBXNativeTarget; buildConfigurationList = A960; buildPhases = (A401, A403, A203,); buildRules = (); dependencies = (A204,); name = Rocam; productName = Rocam; productReference = A302; productType = "com.apple.product-type.application"; };
+  A911 = {isa = PBXNativeTarget; buildConfigurationList = A961; buildPhases = (A402, A404,); buildRules = (); dependencies = (); name = RocamCameraExtension; productName = RocamCameraExtension; productReference = A301; productType = "com.apple.product-type.system-extension"; };
+/* End PBXNativeTarget section */
+/* Begin PBXResourcesBuildPhase section */
+/* End PBXResourcesBuildPhase section */
+/* Begin PBXSourcesBuildPhase section */
+  A403 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A001, A002, A003, A004, A005,); runOnlyForDeploymentPostprocessing = 0; };
+  A404 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A1011, A1012, A1013,); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+/* Begin PBXTargetDependency section */
+  A204 = {isa = PBXTargetDependency; target = A911; targetProxy = A202; };
+/* End PBXTargetDependency section */
+/* Begin XCBuildConfiguration section */
+  A951 = {isa = XCBuildConfiguration; buildSettings = { CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 12.3; SDKROOT = macosx; }; name = Debug; };
+  A952 = {isa = XCBuildConfiguration; buildSettings = { CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 12.3; SDKROOT = macosx; }; name = Release; };
+  A962 = {isa = XCBuildConfiguration; buildSettings = { CODE_SIGN_ENTITLEMENTS = Rocam/Rocam.entitlements; CODE_SIGN_STYLE = Automatic; DEVELOPMENT_TEAM = ""; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Rocam/Info.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MACOSX_DEPLOYMENT_TARGET = 12.3; PRODUCT_BUNDLE_IDENTIFIER = com.rocam.desktop; PRODUCT_NAME = Rocam; SWIFT_VERSION = 6.0; }; name = Debug; };
+  A963 = {isa = XCBuildConfiguration; buildSettings = { CODE_SIGN_ENTITLEMENTS = Rocam/Rocam.entitlements; CODE_SIGN_STYLE = Automatic; DEVELOPMENT_TEAM = ""; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Rocam/Info.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MACOSX_DEPLOYMENT_TARGET = 12.3; PRODUCT_BUNDLE_IDENTIFIER = com.rocam.desktop; PRODUCT_NAME = Rocam; SWIFT_VERSION = 6.0; }; name = Release; };
+  A964 = {isa = XCBuildConfiguration; buildSettings = { CODE_SIGN_ENTITLEMENTS = RocamCameraExtension/RocamCameraExtension.entitlements; CODE_SIGN_STYLE = Automatic; DEVELOPMENT_TEAM = ""; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = RocamCameraExtension/Info.plist; MACOSX_DEPLOYMENT_TARGET = 12.3; PRODUCT_BUNDLE_IDENTIFIER = com.rocam.desktop.CameraExtension; PRODUCT_NAME = com.rocam.desktop.CameraExtension; SWIFT_VERSION = 6.0; }; name = Debug; };
+  A965 = {isa = XCBuildConfiguration; buildSettings = { CODE_SIGN_ENTITLEMENTS = RocamCameraExtension/RocamCameraExtension.entitlements; CODE_SIGN_STYLE = Automatic; DEVELOPMENT_TEAM = ""; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = RocamCameraExtension/Info.plist; MACOSX_DEPLOYMENT_TARGET = 12.3; PRODUCT_BUNDLE_IDENTIFIER = com.rocam.desktop.CameraExtension; PRODUCT_NAME = com.rocam.desktop.CameraExtension; SWIFT_VERSION = 6.0; }; name = Release; };
+/* End XCBuildConfiguration section */
+/* Begin XCConfigurationList section */
+  A950 = {isa = XCConfigurationList; buildConfigurations = (A951, A952,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+  A960 = {isa = XCConfigurationList; buildConfigurations = (A962, A963,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+  A961 = {isa = XCConfigurationList; buildConfigurations = (A964, A965,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+}; rootObject = A900;
+}

@@ -79,19 +79,29 @@ Homebrew.
 2. Unlock the iPhone and tap **Trust** if the iPhone asks.
 3. Keep the Rocam app open.
 
-The computer connects by itself and sends video at 30 frames per second. There
-is no **Start stream** button. In your video app, choose **Rocam** on Linux, or
+The computer connects by itself and sends video at 30 frames per second by
+default. There is no **Start stream** button. In your video app, choose **Rocam** on Linux, or
 **OBS Virtual Camera** on macOS and Windows.
 
 The microphone is off by default. Rocam uses USB for this connection.
 
 For tabletop work, 30 FPS is the default on the phone and desktop receiver.
-In Rocam **Settings → FPS**, choose from 15, 20, 30, 60, or 120 FPS. To use
-60 FPS, choose 60 in Settings, then start the desktop receiver at `--fps 60`.
+Tap the nine-dot button to open **Camera controls** for resolution, FPS,
+LiDAR, and **Flashlight**. The flashlight can stay on while streaming on
+supported cameras. Changing resolution presets or switching LiDAR resets it to off.
+
+In **Camera controls → FPS**, choose from 15, 20, 30, 60, or 120 FPS. To use
+60 FPS, choose 60 in Camera controls, then start the desktop receiver at `--fps 60`.
 Your choice, including 20 FPS, is saved. The active camera mode and hardware
 can limit the available choices; higher FPS may require turning LiDAR off.
 
 ## More information
+
+An [experimental native Mac receiver](desktop/macos/README.md) is available
+as developer source. It bundles its own camera extension and needs no OBS,
+but requires signing and one-time macOS approval. End-to-end live iPhone
+video through its Mac camera output is not yet verified; the setup above
+continues to use the existing OBS receiver.
 
 See the [desktop guide](desktop/README.md) for computer details and the
 [feature matrix](FEATURE_MATRIX.md) for platform details.
