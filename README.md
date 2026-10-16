@@ -6,7 +6,7 @@ Built with robotics in mind for overhead views, robot observations, and
 synchronized RGB/depth capture.
 
 <p>
-  <img src="artwork/app-in-action.png" alt="Overhead robotics view" width="300" />
+  <img src="artwork/robotics-overhead.png" alt="Overhead robotics view" width="300" />
   <img src="artwork/resolution-options.png" alt="Resolution options" width="300" />
 </p>
 <p><em>Overhead robotics view</em> &nbsp;&nbsp;&nbsp; <em>Resolution options.</em></p>
