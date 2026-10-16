@@ -38,12 +38,11 @@ separate per-user systemd installer in [`install_linux.py`](install_linux.py).
 All startup installers use `--usb --fps 30`, protect foreign configurations,
 and leave microphone forwarding disabled.
 
-The phone and desktop receiver both default to 30 FPS. A saved live-rate choice,
-including 20 FPS, remains in effect, so existing users who want 30 FPS must
-select it in the phone's live FPS control. For 60 FPS, select 60 FPS for both
-the phone's capture FPS and live FPS controls, then start the receiver with
-`--fps 60`; a camera mode that captures more slowly will still limit delivered
-frames.
+The iPhone Settings FPS row and desktop receiver both default to 30 FPS. The
+phone offers 15, 20, 30, 60, or 120 FPS when the active camera mode supports
+them; higher FPS may require turning LiDAR off. The saved selection, including
+20 FPS, remains in effect. For 60 FPS, choose **Settings → FPS → 60** on the
+phone, then start the receiver with `--fps 60`.
 
 ## Endpoints and privacy
 

@@ -1,6 +1,27 @@
 import Foundation
 import CoreGraphics
 
+/// Maps the one user-facing live FPS choice to the minimum capture cadence that
+/// can deliver it. Lower live rates deliberately reuse a higher capture rate.
+enum LiveFrameRatePolicy {
+    static let choices = [15, 20, 30, 60, 120]
+
+    static func captureRate(forLiveRate rate: Int, supportedCaptureRates: [Int]) -> Int? {
+        guard choices.contains(rate) else { return nil }
+        return supportedCaptureRates.filter { $0 >= rate }.min()
+    }
+
+    static func availableLiveRates(supportedCaptureRates: [Int]) -> [Int] {
+        choices.filter { captureRate(forLiveRate: $0, supportedCaptureRates: supportedCaptureRates) != nil }
+    }
+
+    static func effectiveLiveRate(requested: Int, availableRates: [Int]) -> Int? {
+        guard choices.contains(requested), !availableRates.isEmpty else { return nil }
+        if availableRates.contains(requested) { return requested }
+        return availableRates.filter { $0 < requested }.max() ?? availableRates.min()
+    }
+}
+
 final class FrameStore {
     private let lock = NSLock()
     private var color: Data?

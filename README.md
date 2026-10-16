@@ -108,12 +108,11 @@ is no **Start stream** button. In your video app, choose **Rocam** on Linux, or
 
 The microphone is off by default. Rocam uses USB for this connection.
 
-For tabletop work, 30 FPS is the default on the phone and desktop receiver. To
-use 60 FPS, choose 60 for the phone's capture FPS and live FPS, then start the
-desktop receiver at `--fps 60`. Saved live choices, including 20 FPS, are
-preserved, so existing users who want 30 FPS need to select it in the phone's
-live FPS control. Depth hardware or the selected camera mode can still deliver
-fewer frames than the requested rate.
+For tabletop work, 30 FPS is the default on the phone and desktop receiver.
+In Rocam **Settings → FPS**, choose from 15, 20, 30, 60, or 120 FPS. To use
+60 FPS, choose 60 in Settings, then start the desktop receiver at `--fps 60`.
+Your choice, including 20 FPS, is saved. The active camera mode and hardware
+can limit the available choices; higher FPS may require turning LiDAR off.
 
 ## More information
 

@@ -223,6 +223,7 @@ final class CameraService: NSObject, ObservableObject {
     @Published private(set) var customOutputSize: CustomOutputSize?
     @Published private(set) var activeFrameRate = 0
     @Published private(set) var availableFrameRates: [Int] = []
+    @Published private(set) var availableLiveFrameRates = LiveFrameRatePolicy.choices
     @Published private(set) var activePhotoFormat: PhotoFormat = .jpeg
     @Published private(set) var photoFlashMode: AVCaptureDevice.FlashMode = .auto
     @Published private(set) var availablePhotoFormats: [PhotoFormat] = [.jpeg]
@@ -233,6 +234,10 @@ final class CameraService: NSObject, ObservableObject {
     @Published private(set) var hdrLiveAvailable = false
     @Published private(set) var hdrLiveEnabled = false
     @Published private(set) var streamFPS = 30
+    /// The saved user choice. `streamFPS` is the rate actually used after the
+    /// current camera or LiDAR format has applied its hardware limit.
+    @Published private(set) var requestedStreamFPS = 30
+    @Published private(set) var frameRateLimitMessage: String?
     /// The selected stream rate used by rendering and encoders.
     @Published private(set) var effectiveStreamFPS = 30
     @Published private(set) var effectiveCaptureFPS: Int?
@@ -349,8 +354,14 @@ final class CameraService: NSObject, ObservableObject {
     private var cinematicFocusFixed = false
     private var wantsCameraRunning = false // Main thread only.
     private var sessionObservers: [NSObjectProtocol] = []
-    // Access only on sessionQueue. This restores the user's selected capture rate.
+    // Access only on sessionQueue. These restore the user's selected capture and
+    // live rates without exposing session state directly to SwiftUI.
     private var requestedFrameRate = 0
+    private var requestedLiveStreamFPS = 30
+    private var frameRateStateGeneration = 0
+    // Access only on the main thread. It discards delayed UI snapshots from an
+    // earlier session configuration.
+    private var publishedFrameRateStateGeneration = 0
     private var wantsLivePhoto = UserDefaults.standard.bool(forKey: "livePhoto")
     private var wantsHDRRecording = UserDefaults.standard.bool(forKey: "hdrRecording")
     private var wantsHDRLive = UserDefaults.standard.bool(forKey: "hdrLive")
@@ -424,7 +435,9 @@ final class CameraService: NSObject, ObservableObject {
         customOutputSize = CustomOutputSize(defaults: defaults)
         customOutputSizeSnapshot = customOutputSize
         let savedStreamFPS = UserDefaults.standard.integer(forKey: "streamFPS")
-        streamFPS = [15, 20, 30, 60, 120].contains(savedStreamFPS) ? savedStreamFPS : 30
+        streamFPS = LiveFrameRatePolicy.choices.contains(savedStreamFPS) ? savedStreamFPS : 30
+        requestedStreamFPS = streamFPS
+        requestedLiveStreamFPS = streamFPS
         frames.setStreamFPS(streamFPS)
         streamImageQuality = StreamImageQuality(rawValue: defaults.string(forKey: "streamImageQuality") ?? "") ?? .normal
         jpegCompression = streamImageQuality.jpegCompression
@@ -1294,12 +1307,61 @@ final class CameraService: NSObject, ObservableObject {
         guard let device = currentDevice else { return }
         let choices = supportedFrameRates(for: device)
         let saved = UserDefaults.standard.integer(forKey: "recordingFrameRate")
-        let requested = choices.contains(saved) ? saved : 0
+        let savedCaptureRate = choices.contains(saved) ? saved : 0
+        let requiredCaptureRate = LiveFrameRatePolicy.captureRate(
+            forLiveRate: requestedLiveStreamFPS,
+            supportedCaptureRates: choices
+        )
+        // The saved live choice is authoritative for app settings. Preserve a
+        // higher explicit capture rate, but never restore one below live output.
+        let requested = max(savedCaptureRate, requiredCaptureRate ?? choices.max() ?? 0)
         requestedFrameRate = requested
         let selected = applyFrameRate(requested, to: device) ? requested : 0
+        publishFrameRateState(for: device, activeCaptureRate: selected)
+    }
+
+    private func publishFrameRateState(for device: AVCaptureDevice, activeCaptureRate: Int) {
+        let captureRates = supportedFrameRates(for: device)
+        let liveRates = LiveFrameRatePolicy.availableLiveRates(supportedCaptureRates: captureRates)
+        let requestedLiveRate = requestedLiveStreamFPS
+        let deliveredCaptureRates: [Int]
+        if activeCaptureRate > 0 {
+            deliveredCaptureRates = [activeCaptureRate]
+        } else if let automaticRate = automaticCaptureRate(for: device, ceiling: 30) {
+            deliveredCaptureRates = [automaticRate]
+        } else {
+            deliveredCaptureRates = []
+        }
+        let effectiveLiveRate = LiveFrameRatePolicy.effectiveLiveRate(
+            requested: requestedLiveRate,
+            availableRates: LiveFrameRatePolicy.availableLiveRates(supportedCaptureRates: deliveredCaptureRates)
+        )
+        let limitMessage: String?
+        if let effectiveLiveRate {
+            frames.setStreamFPS(effectiveLiveRate)
+            limitMessage = requestedLiveRate == effectiveLiveRate
+                ? nil
+                : "\(configuredLens == .lidar ? "LiDAR" : "This camera setting") limits FPS to \(effectiveLiveRate)."
+        } else {
+            // Capability discovery can briefly be empty while a graph changes.
+            // Retain the last usable cadence rather than stopping camera output.
+            limitMessage = captureRates.isEmpty
+                ? "FPS options are unavailable with this camera setting."
+                : "This camera setting cannot deliver the selected FPS."
+        }
+        let publishedRate = effectiveLiveRate ?? frames.effectiveStreamFPS()
+        frameRateStateGeneration += 1
+        let generation = frameRateStateGeneration
         DispatchQueue.main.async {
-            self.availableFrameRates = choices
-            self.activeFrameRate = selected
+            guard generation >= self.publishedFrameRateStateGeneration else { return }
+            self.publishedFrameRateStateGeneration = generation
+            self.availableFrameRates = captureRates
+            self.activeFrameRate = activeCaptureRate
+            self.availableLiveFrameRates = liveRates
+            self.requestedStreamFPS = requestedLiveRate
+            self.streamFPS = publishedRate
+            self.effectiveStreamFPS = publishedRate
+            self.frameRateLimitMessage = limitMessage
         }
     }
 
@@ -1486,20 +1548,60 @@ final class CameraService: NSObject, ObservableObject {
                     self.refreshCinematicControls(for: device, input: input, lens: self.configuredLens)
                 }
                 self.restorePhotoFormat()
+                self.publishFrameRateState(for: device, activeCaptureRate: rate)
                 self.updateStreamStatus()
-                DispatchQueue.main.async { self.activeFrameRate = rate }
             }
         }
     }
 
-    func setStreamFPS(_ rate: Int) {
-        guard [15, 20, 30, 60, 120].contains(rate) else { return }
-        frames.setStreamFPS(rate)
-        UserDefaults.standard.set(rate, forKey: "streamFPS")
-        let effective = frames.effectiveStreamFPS()
-        DispatchQueue.main.async {
-            self.streamFPS = rate
-            self.effectiveStreamFPS = effective
+    /// Applies the app's single FPS choice atomically: capture first, then its
+    /// live cap. A failed capture transition leaves the existing live cadence intact.
+    func setStreamFPS(_ liveRate: Int) {
+        guard LiveFrameRatePolicy.choices.contains(liveRate) else { return }
+        sessionQueue.async {
+            guard !self.recordingInFlight, !self.movieOutput.isRecording else {
+                return
+            }
+            guard let device = self.currentDevice else {
+                self.requestedLiveStreamFPS = liveRate
+                UserDefaults.standard.set(liveRate, forKey: "streamFPS")
+                self.frameRateStateGeneration += 1
+                let generation = self.frameRateStateGeneration
+                DispatchQueue.main.async {
+                    guard generation >= self.publishedFrameRateStateGeneration else { return }
+                    self.publishedFrameRateStateGeneration = generation
+                    self.requestedStreamFPS = liveRate
+                }
+                return
+            }
+            guard !self.hasPendingPhotoCapture else {
+                self.report("Wait for the photo capture to finish.")
+                return
+            }
+            let captureRates = self.supportedFrameRates(for: device)
+            guard let captureRate = LiveFrameRatePolicy.captureRate(
+                forLiveRate: liveRate,
+                supportedCaptureRates: captureRates
+            ) else {
+                self.report("\(liveRate) fps is unavailable with this camera setting.")
+                self.publishFrameRateState(for: device, activeCaptureRate: self.requestedFrameRate)
+                return
+            }
+            guard self.applyFrameRate(captureRate, to: device) else { return }
+
+            self.requestedFrameRate = captureRate
+            self.requestedLiveStreamFPS = liveRate
+            if !self.isCinematicCaptureActive() {
+                UserDefaults.standard.set(captureRate, forKey: "recordingFrameRate")
+            }
+            UserDefaults.standard.set(liveRate, forKey: "streamFPS")
+            self.refreshFormatDependentControls(for: device, lens: self.configuredLens)
+            if let input = self.cinematicInput {
+                self.refreshCinematicControls(for: device, input: input, lens: self.configuredLens)
+            }
+            self.restorePhotoFormat()
+            self.publishFrameRateState(for: device, activeCaptureRate: captureRate)
+            self.updateStreamStatus()
         }
     }
 

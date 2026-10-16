@@ -657,6 +657,25 @@ struct ContentView: View {
         .pickerStyle(.navigationLink)
         .disabled(camera.isRecording)
 
+        Picker("FPS", selection: Binding<Int>(
+            get: { camera.requestedStreamFPS },
+            set: { camera.setStreamFPS($0) }
+        )) {
+            ForEach(LiveFrameRatePolicy.choices, id: \.self) { rate in
+                Text("\(rate) fps")
+                    .tag(rate)
+                    .disabled(!camera.availableLiveFrameRates.contains(rate))
+            }
+        }
+        .pickerStyle(.navigationLink)
+        .disabled(camera.isRecording || camera.availableLiveFrameRates.isEmpty)
+
+        if let message = camera.frameRateLimitMessage {
+            Text(message)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+
         if camera.customOutputSize != nil || isEditingCustomOutputSize {
             Section("Custom resolution") {
                 HStack(spacing: 10) {

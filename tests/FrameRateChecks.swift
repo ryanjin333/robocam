@@ -12,6 +12,8 @@ struct FrameRateChecks {
     static func main() {
         checkDefaultAndSelectedReservationCadence()
         checkExplicitTwentyFPSCadence()
+        checkLiveRateMapsToCaptureCapabilities()
+        checkLiDARRateLimitDoesNotClaimAnUnavailableRate()
         checkLeaseAndInvalidation()
         print("Frame rate checks passed")
     }
@@ -44,6 +46,34 @@ struct FrameRateChecks {
                 "an explicit 20 FPS choice must remain at its selected cadence")
         require(twenty.reserveRobotCapture(at: 1.0 / 20.0) != nil,
                 "an explicit 20 FPS choice must reserve at 20 FPS")
+    }
+
+    private static func checkLiveRateMapsToCaptureCapabilities() {
+        let captureRates = [24, 30, 60, 120]
+        require(LiveFrameRatePolicy.availableLiveRates(supportedCaptureRates: captureRates) == [15, 20, 30, 60, 120],
+                "capture capabilities must expose the supported live choices")
+        require(LiveFrameRatePolicy.captureRate(forLiveRate: 15, supportedCaptureRates: captureRates) == 24,
+                "15 FPS live output must use the lowest sufficient capture rate")
+        require(LiveFrameRatePolicy.captureRate(forLiveRate: 20, supportedCaptureRates: captureRates) == 24,
+                "20 FPS live output must use the lowest sufficient capture rate")
+        require(LiveFrameRatePolicy.captureRate(forLiveRate: 60, supportedCaptureRates: captureRates) == 60,
+                "60 FPS live output must request 60 FPS capture")
+        let twentyFPSCapture = LiveFrameRatePolicy.captureRate(forLiveRate: 20, supportedCaptureRates: captureRates)
+        let deliveredRates = LiveFrameRatePolicy.availableLiveRates(
+            supportedCaptureRates: [twentyFPSCapture].compactMap { $0 }
+        )
+        require(deliveredRates == [15, 20],
+                "a 24 FPS capture setting must not claim 30 FPS live delivery")
+    }
+
+    private static func checkLiDARRateLimitDoesNotClaimAnUnavailableRate() {
+        let lidarCaptureRates = [24, 30]
+        let liveRates = LiveFrameRatePolicy.availableLiveRates(supportedCaptureRates: lidarCaptureRates)
+        require(liveRates == [15, 20, 30], "LiDAR 24/30 FPS capture must not advertise 60 or 120 FPS live output")
+        require(LiveFrameRatePolicy.effectiveLiveRate(requested: 120, availableRates: liveRates) == 30,
+                "a saved 120 FPS request must report the LiDAR-compatible 30 FPS rate")
+        require(LiveFrameRatePolicy.effectiveLiveRate(requested: 60, availableRates: liveRates) == 30,
+                "a 60 FPS request must not claim a rate above the LiDAR capture cadence")
     }
 
     private static func checkLeaseAndInvalidation() {
