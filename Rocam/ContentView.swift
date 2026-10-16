@@ -710,6 +710,11 @@ struct ContentView: View {
             ))
             .disabled(camera.isRecording)
         }
+
+        Toggle("Flashlight", isOn: Binding(
+            get: { camera.torchEnabled },
+            set: { camera.setTorch($0) }
+        ))
     }
 
     private var cameraUnavailableCard: some View {
