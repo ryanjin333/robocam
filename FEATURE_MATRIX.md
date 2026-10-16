@@ -3,7 +3,7 @@
 | Feature | Linux | macOS | Windows |
 | --- | --- | --- | --- |
 | USB-only automatic connection | Exercised | Code and setup present; physical check pending | Code and setup present; physical check pending |
-| Desktop GUI and `--usb --fps 20` receiver | Exercised | Native build path present | Native build path present |
+| Desktop GUI and USB receiver | Exercised | Native build path present | Native build path present |
 | Virtual-camera output | v4l2loopback | OBS Virtual Camera required | OBS Virtual Camera required |
 | Optional LiDAR depth view | Available when supported by phone | Same receiver support | Same receiver support |
 | Microphone forwarding | Available only when configured | Available only when configured | Available only when configured |

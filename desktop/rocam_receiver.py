@@ -287,7 +287,7 @@ def _clear_camera(camera, dimensions: tuple[int, int]) -> bool:
 def receive(
     url: str,
     *,
-    fps: int = 20,
+    fps: int = 30,
     camera_factory: Callable = create_camera,
     decoder: Callable = decode_jpeg,
     opener: Callable | None = None,
@@ -555,7 +555,7 @@ def main(argv: list[str] | None = None) -> int:
                         help="Color transport codec (default: mjpeg)")
     parser.add_argument("--usb", action="store_true", help="Forward USB with iproxy to localhost:8765")
     parser.add_argument("--udid", metavar="UDID", help="Select an attached iPhone or iPad for --usb")
-    parser.add_argument("--fps", type=int, default=20, help="Virtual webcam FPS (default: 20)")
+    parser.add_argument("--fps", type=int, default=30, help="Virtual webcam FPS (default: 30)")
     parser.add_argument(
         "--audio-output", metavar="DEVICE",
         help="Forward microphone audio to a named virtual audio output device",

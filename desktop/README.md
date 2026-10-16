@@ -4,7 +4,7 @@ The desktop receiver publishes the Rocam phone feed as a virtual camera. The
 GUI starts USB mode automatically. The command-line equivalent is:
 
 ```sh
-rocam-webcam --usb --fps 20
+rocam-webcam --usb --fps 30
 ```
 
 USB mode needs `iproxy` and never falls back to Wi-Fi. The phone must be
@@ -35,8 +35,15 @@ bundle on the matching operating system.
 Run [`setup_macos.sh`](setup_macos.sh) or
 [`setup_windows.ps1`](setup_windows.ps1) from an unpacked release. Linux has a
 separate per-user systemd installer in [`install_linux.py`](install_linux.py).
-All startup installers use `--usb --fps 20`, protect foreign configurations,
+All startup installers use `--usb --fps 30`, protect foreign configurations,
 and leave microphone forwarding disabled.
+
+The phone and desktop receiver both default to 30 FPS. A saved live-rate choice,
+including 20 FPS, remains in effect, so existing users who want 30 FPS must
+select it in the phone's live FPS control. For 60 FPS, select 60 FPS for both
+the phone's capture FPS and live FPS controls, then start the receiver with
+`--fps 60`; a camera mode that captures more slowly will still limit delivered
+frames.
 
 ## Endpoints and privacy
 

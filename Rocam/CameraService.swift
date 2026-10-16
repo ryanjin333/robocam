@@ -232,9 +232,9 @@ final class CameraService: NSObject, ObservableObject {
     @Published private(set) var hdrRecordingEnabled = false
     @Published private(set) var hdrLiveAvailable = false
     @Published private(set) var hdrLiveEnabled = false
-    @Published private(set) var streamFPS = 20
+    @Published private(set) var streamFPS = 30
     /// The selected stream rate used by rendering and encoders.
-    @Published private(set) var effectiveStreamFPS = 20
+    @Published private(set) var effectiveStreamFPS = 30
     @Published private(set) var effectiveCaptureFPS: Int?
     @Published private(set) var thermalState = ProcessInfo.processInfo.thermalState
     @Published private(set) var performanceMessage: String?
@@ -424,7 +424,7 @@ final class CameraService: NSObject, ObservableObject {
         customOutputSize = CustomOutputSize(defaults: defaults)
         customOutputSizeSnapshot = customOutputSize
         let savedStreamFPS = UserDefaults.standard.integer(forKey: "streamFPS")
-        streamFPS = [15, 20, 30, 60, 120].contains(savedStreamFPS) ? savedStreamFPS : 20
+        streamFPS = [15, 20, 30, 60, 120].contains(savedStreamFPS) ? savedStreamFPS : 30
         frames.setStreamFPS(streamFPS)
         streamImageQuality = StreamImageQuality(rawValue: defaults.string(forKey: "streamImageQuality") ?? "") ?? .normal
         jpegCompression = streamImageQuality.jpegCompression

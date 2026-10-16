@@ -114,7 +114,7 @@ exec "$REAL_PYTHON" "$@"
                 payload = plistlib.load(source)
             expected_venv = root / "home/Library/Application Support/Rocam/venv"
             self.assertEqual(payload["RocamManagedBy"], "Rocam setup_macos.sh")
-            self.assertEqual(payload["ProgramArguments"], [str(expected_venv / "bin/rocam-webcam"), "--usb", "--fps", "20"])
+            self.assertEqual(payload["ProgramArguments"], [str(expected_venv / "bin/rocam-webcam"), "--usb", "--fps", "30"])
             self.assertEqual(payload["EnvironmentVariables"]["PATH"].split(":")[0], str(root / "brew/bin"))
             self.assertTrue((expected_venv / "bin/rocam-webcam").is_file())
 

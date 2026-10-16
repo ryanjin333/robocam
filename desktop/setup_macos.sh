@@ -14,7 +14,7 @@ usage() { cat <<'EOF'
 Usage: setup_macos.sh [--wheel PATH] [--udid DEVICE_ID]
 
 Installs the USB receiver for this desktop user. It starts at login with
-`rocam-webcam --usb --fps 20`; microphone forwarding remains off.
+`rocam-webcam --usb --fps 30`; microphone forwarding remains off.
 EOF
 }
 while (($#)); do
@@ -82,7 +82,7 @@ if [[ -n "$wheel" ]]; then "$DATA_DIR/venv/bin/python" -m pip install --upgrade 
 "$python_bin" - "$LAUNCH_AGENT" "$DATA_DIR/venv/bin/rocam-webcam" "$brew_bin" "$DATA_DIR" "$SERVICE_LABEL" "$udid" <<'PY'
 import plistlib, sys
 path, receiver, brew_bin, data_dir, label, udid = sys.argv[1:]
-args = [receiver, "--usb", "--fps", "20"]
+args = [receiver, "--usb", "--fps", "30"]
 if udid: args += ["--udid", udid]
 with open(path, "wb") as output:
     plistlib.dump({"Label": label, "RocamManagedBy": "Rocam setup_macos.sh", "ProgramArguments": args,
@@ -95,7 +95,7 @@ launchctl bootstrap "gui/$uid" "$LAUNCH_AGENT"
 trap - ERR
 rm -f "$old_plist"; rm -rf -- "$old_venv"
 cat <<'EOF'
-Rocam will start automatically after login using USB at 20 FPS. Connect and
+Rocam will start automatically after login using USB at 30 FPS. Connect and
 trust the iPhone or iPad, then keep the Rocam app open. OBS Virtual Camera is
 installed if needed, but macOS requires you to approve its existing extension:
 System Settings > General > Login Items & Extensions > Camera Extensions.

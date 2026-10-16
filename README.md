@@ -1,6 +1,10 @@
-# Rocam
+<h1><img src="artwork/RocamIcon.png" alt="Rocam logo" width="40" height="40"> Rocam</h1>
 
 Turn your iPhone into a USB webcam, with optional LiDAR depth.
+
+![Rocam camera preview on iPhone](artwork/app-in-action.png)
+
+Rocam running on iPhone.
 
 LiDAR is a sensor that helps the phone see how far things are from it. Your
 iPhone may show this as a depth view when it has LiDAR.
@@ -22,7 +26,7 @@ and use the existing setup scripts rather than creating a separate installer:
 - Windows PowerShell: ./desktop/setup_windows.ps1 (requires winget)
 Run setup from the repository root as the desktop user, not as root.
 Install missing prerequisites and configure the receiver to start at login.
-Keep USB mode at 20 FPS and microphone forwarding off.
+Keep USB mode at 30 FPS and microphone forwarding off.
 
 The iPhone app must be installed using Xcode on a Mac, even if the receiver
 computer runs Linux or Windows. If a Mac and iPhone are available, help me
@@ -52,8 +56,7 @@ You do these two setup steps once.
 1. **Set up the iPhone on a Mac.** Open `Rocam.xcodeproj` in Xcode. Choose your Apple
    Team, select your real iPhone, and press **Run**. Open the app on the phone.
 
-2. **Set up the computer.** Download the official **Source code (zip)** from
-   the [GitHub releases page](https://github.com/ryanjin333/rocam/releases),
+2. **Set up the computer.** [Download the current source ZIP](https://github.com/ryanjin333/rocam/archive/refs/heads/main.zip)
    and extract the full repository. Then run the command for your computer:
 
    - Linux: `python3 desktop/setup_linux.py`
@@ -75,11 +78,18 @@ Homebrew.
 2. Unlock the iPhone and tap **Trust** if the iPhone asks.
 3. Keep the Rocam app open.
 
-The computer connects by itself and sends video at 20 frames per second. There
+The computer connects by itself and sends video at 30 frames per second. There
 is no **Start stream** button. In your video app, choose **Rocam** on Linux, or
 **OBS Virtual Camera** on macOS and Windows.
 
 The microphone is off by default. Rocam uses USB for this connection.
+
+For tabletop work, 30 FPS is the default on the phone and desktop receiver. To
+use 60 FPS, choose 60 for the phone's capture FPS and live FPS, then start the
+desktop receiver at `--fps 60`. Saved live choices, including 20 FPS, are
+preserved, so existing users who want 30 FPS need to select it in the phone's
+live FPS control. Depth hardware or the selected camera mode can still deliver
+fewer frames than the requested rate.
 
 ## More information
 

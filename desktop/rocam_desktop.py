@@ -27,7 +27,7 @@ class SessionConfig:
     connection_url: str
     usb: bool = False
     depth: bool = False
-    fps: int = 20
+    fps: int = 30
     udid: str | None = None
     audio_output: str | None = None
     codec: str = "mjpeg"
@@ -406,7 +406,7 @@ class RocamDesktopApp:
         self.url = tk.StringVar()
         self.usb = tk.BooleanVar(value=True)
         self.source = tk.StringVar(value="camera")
-        self.fps = tk.StringVar(value="20")
+        self.fps = tk.StringVar(value="30")
         self.udid = tk.StringVar()
         self.audio_output = tk.StringVar()
         self.codec = tk.StringVar(value="mjpeg")

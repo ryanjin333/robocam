@@ -24,7 +24,7 @@ class LinuxInstallerTests(unittest.TestCase):
 
         self.assertIn(
             'ExecStart=:"' + str(Path(temp) / "Rocam data" / "venv/bin/rocam-webcam")
-            + '" "--usb" "--fps" "20"',
+            + '" "--usb" "--fps" "30"',
             unit,
         )
         self.assertNotIn("--udid", unit)

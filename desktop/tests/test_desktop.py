@@ -21,6 +21,11 @@ def wait_until(predicate, timeout=1.0):
 
 
 class ControllerTests(unittest.TestCase):
+    def test_session_config_defaults_to_30_fps(self):
+        from rocam_desktop import SessionConfig
+
+        self.assertEqual(SessionConfig("").fps, 30)
+
     def test_usb_allows_blank_config_and_discovers_session_inside_forwarder(self):
         from rocam_desktop import SessionConfig, SessionController
 

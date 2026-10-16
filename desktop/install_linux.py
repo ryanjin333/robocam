@@ -58,7 +58,7 @@ def systemd_escape_arg(value: str | Path) -> str:
 
 
 def unit_text(paths: Paths, udid: str | None) -> str:
-    args = [paths.venv_dir / "bin/rocam-webcam", "--usb", "--fps", "20"]
+    args = [paths.venv_dir / "bin/rocam-webcam", "--usb", "--fps", "30"]
     if udid is not None:
         args.extend(["--udid", udid])
     command = " ".join(systemd_escape_arg(argument) for argument in args)

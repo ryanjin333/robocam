@@ -403,7 +403,7 @@ class ReceiverTests(unittest.TestCase):
             message=lambda _: None,
         )
         self.assertEqual([camera.size for camera in cameras], [(640, 480), (1280, 720)])
-        self.assertEqual([camera.fps for camera in cameras], [20, 20])
+        self.assertEqual([camera.fps for camera in cameras], [30, 30])
         self.assertTrue(all(camera.closed for camera in cameras))
         self.assertEqual([size for size, _ in sent], [(640, 480), (640, 480), (1280, 720), (1280, 720)])
         self.assertTrue(np.all(sent[0][1] == 100))
@@ -666,6 +666,7 @@ class CliTests(unittest.TestCase):
         prompt.assert_not_called()
         self.assertEqual(len(discovered), 1)
         self.assertEqual(received[0][0], f"http://127.0.0.1:8765/stream?key={KEY}")
+        self.assertEqual(received[0][1]["fps"], 30)
         self.assertTrue(callable(received[0][1]["refresh_session"]))
 
     def test_cli_accepts_120_fps(self):

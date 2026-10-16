@@ -66,6 +66,11 @@ jobs:
           swiftc "$RUNNER_TEMP/ConnectionActivityPolicy.swift" tests/ConnectionActivityChecks.swift \
             -o "$RUNNER_TEMP/connection-activity-checks"
           "$RUNNER_TEMP/connection-activity-checks"
+      - name: Run frame-rate policy checks
+        run: |
+          swiftc Rocam/EncodedStream.swift Rocam/FrameStore.swift tests/FrameRateChecks.swift \
+            -o "$RUNNER_TEMP/frame-rate-checks"
+          "$RUNNER_TEMP/frame-rate-checks"
       - name: Verify Xcode 26 SDK and build unsigned iOS 17 app
         run: |
           xcodebuild -version

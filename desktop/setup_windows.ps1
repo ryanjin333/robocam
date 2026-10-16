@@ -116,7 +116,7 @@ try {
     Invoke-Checked { & (Join-Path $venv 'Scripts\python.exe') -m pip install --upgrade --force-reinstall $Wheel } 'installing the Rocam wheel'
     Invoke-Checked { & (Join-Path $venv 'Scripts\rocam-webcam.exe') --help | Out-Null } 'validating the Rocam receiver'
     $safeTools = $tools -replace '%', '%%'; $safeReceiver = (Join-Path $venv 'Scripts\rocam-webcam.exe') -replace '%', '%%'
-    $receiverLine = '@"' + $safeReceiver + '" --usb --fps 20' + $(if ($Udid) { ' --udid ' + $Udid } else { '' })
+    $receiverLine = '@"' + $safeReceiver + '" --usb --fps 30' + $(if ($Udid) { ' --udid ' + $Udid } else { '' })
     @($Marker, '@setlocal', '@set "PATH=' + $safeTools + ';%PATH%"', $receiverLine) | Set-Content -LiteralPath $StartupFile -Encoding ascii
     $process = Start-Process -FilePath $StartupFile -PassThru
     Start-Sleep -Seconds 2
@@ -131,6 +131,6 @@ try {
     if (Test-Path -LiteralPath $backup) { Move-Item -LiteralPath $backup -Destination $venv }
     throw
 }
-Write-Host 'Rocam will start from this user''s Startup folder using USB at 20 FPS.'
+Write-Host 'Rocam will start from this user''s Startup folder using USB at 30 FPS.'
 Write-Host 'Connect the phone by USB, unlock it, and accept Trust. AppleMobileDeviceService cannot grant that trust automatically.'
 Write-Host 'OBS Virtual Camera remains a normal OBS setup step. Microphone forwarding is off.'

@@ -22,7 +22,7 @@ final class FrameStore {
     private var depthViewers = 0
     private var externalDisplayActive = false
     private var depthPreviewCount = 0
-    private var streamFPS = 20
+    private var streamFPS = 30
     private var hdrViewerUntil: TimeInterval = 0
     private var sourceWidth = 0
     private var sourceHeight = 0
@@ -193,12 +193,12 @@ final class FrameStore {
         robotViewerUntil = now + 2
     }
 
-    /// Reserves one robot capture at the effective live rate, capped at 20 FPS.
+    /// Reserves one robot capture at the selected live rate.
     /// Call this immediately before the native JPEG/depth copy, on videoQueue.
     func reserveRobotCapture(at now: TimeInterval = ProcessInfo.processInfo.systemUptime) -> UInt64? {
         lock.lock(); defer { lock.unlock() }
         guard jpegEnabled, now < robotViewerUntil else { return nil }
-        let rate = min(streamFPS, 20)
+        let rate = streamFPS
         guard rate > 0, now >= nextRobotCaptureTime else { return nil }
         let interval = 1.0 / Double(rate)
         nextRobotCaptureTime = now - nextRobotCaptureTime > interval ? now + interval : nextRobotCaptureTime + interval
