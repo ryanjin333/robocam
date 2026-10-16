@@ -1,12 +1,9 @@
 <h1><img src="artwork/RocamIcon.png" alt="Rocam logo" width="40" height="40" align="absmiddle"> Rocam</h1>
 
-Turn your iPhone into a USB webcam with optional LiDAR depth.
+A minimalist iPhone USB webcam app with optional LiDAR depth.
 
 Built with robotics in mind for overhead views, robot observations, and
 synchronized RGB/depth capture.
-
-A minimalist interface keeps the camera view clear, with resolution, FPS,
-and LiDAR controls tucked into simple settings.
 
 ## App screenshots
 
