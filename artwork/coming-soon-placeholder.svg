@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="852" height="1846" viewBox="0 0 852 1846" role="img" aria-labelledby="title desc">
+  <title id="title">Coming soon</title>
+  <desc id="desc">Placeholder for a future Rocam app screenshot.</desc>
+  <rect width="852" height="1846" fill="#161412"/>
+  <rect x="48" y="48" width="756" height="1750" rx="48" fill="none" stroke="#5d554b" stroke-width="2"/>
+  <text x="426" y="900" fill="#f1ede6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="42" font-weight="600" text-anchor="middle">Coming soon</text>
+</svg>

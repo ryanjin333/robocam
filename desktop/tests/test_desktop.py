@@ -42,7 +42,7 @@ class ControllerTests(unittest.TestCase):
             return f"http://127.0.0.1:8765/?key={KEY}"
 
         def receiver(url, **kwargs):
-            events.append(("receiver", url, kwargs["refresh_session"]()))
+            events.append(("receiver", url, kwargs["refresh_session"](), kwargs["refresh_before_attempt"]))
 
         controller = SessionController(receiver=receiver, forwarder=forwarder, session_discoverer=discover)
         self.assertTrue(controller.start(SessionConfig("", usb=True)))
@@ -51,7 +51,7 @@ class ControllerTests(unittest.TestCase):
             ("forwarder", True, None),
             ("discover",),
             ("discover",),
-            ("receiver", f"http://127.0.0.1:8765/stream?key={KEY}", f"http://127.0.0.1:8765/stream?key={KEY}"),
+            ("receiver", f"http://127.0.0.1:8765/stream?key={KEY}", f"http://127.0.0.1:8765/stream?key={KEY}", True),
         ])
 
     def test_blank_non_usb_config_is_rejected(self):
@@ -59,6 +59,61 @@ class ControllerTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ReceiverError, "Connection URL"):
             SessionController().start(SessionConfig("", usb=False))
+
+    def test_usb_refresh_with_unchanged_url_does_not_restart_audio(self):
+        from rocam_desktop import SessionConfig, SessionController
+
+        starts, stops = [], []
+
+        def receiver(_url, **kwargs):
+            self.assertTrue(kwargs["refresh_before_attempt"])
+            self.assertEqual(kwargs["refresh_session"](), f"http://127.0.0.1:8765/stream?key={KEY}")
+            self.assertEqual(kwargs["refresh_session"](), f"http://127.0.0.1:8765/stream?key={KEY}")
+
+        controller = SessionController(
+            receiver=receiver,
+            session_discoverer=lambda _link: f"http://127.0.0.1:8765/?key={KEY}",
+        )
+        controller._start_audio = lambda url, *_args, **_kwargs: starts.append(url) or object()
+        controller._stop_audio = lambda _event, thread: stops.append(thread) or True
+        config = SessionConfig("", usb=True, audio_output="Loopback")
+        controller._run_receiver_session(
+            config,
+            f"http://127.0.0.1:8765/stream?key={KEY}",
+            threading.Event(),
+            lambda: True,
+        )
+        self.assertEqual(starts, [f"http://127.0.0.1:8765/stream?key={KEY}"])
+        self.assertEqual(len(stops), 1)  # Final cleanup only; refresh did not restart audio.
+
+    def test_usb_audio_key_change_bootstraps_again_after_audio_cleanup(self):
+        from rocam_desktop import SessionConfig, SessionController
+
+        next_key, final_key = "b" * 32, "c" * 32
+        discoveries = iter((
+            f"http://127.0.0.1:8765/?key={next_key}",
+            f"http://127.0.0.1:8765/?key={final_key}",
+        ))
+        events, starts = [], []
+
+        def receiver(_url, **kwargs):
+            refreshed = kwargs["refresh_session"]()
+            self.assertEqual(refreshed, f"http://127.0.0.1:8765/stream?key={final_key}")
+
+        controller = SessionController(receiver=receiver, session_discoverer=lambda _link: events.append("discover") or next(discoveries))
+        controller._start_audio = lambda url, *_args, **_kwargs: starts.append(url) or url
+        controller._stop_audio = lambda _event, thread: events.append(("stop", thread)) or True
+        controller._run_receiver_session(
+            SessionConfig("", usb=True, audio_output="Loopback"),
+            f"http://127.0.0.1:8765/stream?key={KEY}",
+            threading.Event(),
+            lambda: True,
+        )
+        self.assertEqual(events[:3], ["discover", ("stop", f"http://127.0.0.1:8765/stream?key={KEY}"), "discover"])
+        self.assertEqual(starts, [
+            f"http://127.0.0.1:8765/stream?key={KEY}",
+            f"http://127.0.0.1:8765/stream?key={final_key}",
+        ])
 
     def test_usb_transport_loss_reopens_forwarder_without_duplicate_receiver(self):
         from rocam_desktop import SessionConfig, SessionController

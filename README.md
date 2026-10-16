@@ -5,10 +5,24 @@ Turn your iPhone into a USB webcam with optional LiDAR depth.
 Built with robotics in mind for overhead views, robot observations, and
 synchronized RGB/depth capture.
 
-<p>
-  <img src="artwork/robotics-overhead.png" alt="Overhead robotics view" width="300" />
-</p>
-<p><em>Overhead robotics view</em></p>
+## App screenshots
+
+<table>
+  <tr>
+    <td width="33.33%" align="center">
+      <img src="artwork/robotics-overhead-clean.png" alt="Camera view" width="240" /><br />
+      <sub>Camera view</sub>
+    </td>
+    <td width="33.33%" align="center">
+      <img src="artwork/resolution-settings-clean.png" alt="Resolution settings" width="240" /><br />
+      <sub>Resolution settings</sub>
+    </td>
+    <td width="33.33%" align="center">
+      <img src="artwork/coming-soon-placeholder.svg" alt="Coming soon" width="240" /><br />
+      <sub>Coming soon</sub>
+    </td>
+  </tr>
+</table>
 
 LiDAR is a sensor that helps the phone see how far things are from it. Your
 iPhone may show this as a depth view when it has LiDAR.

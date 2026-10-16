@@ -325,6 +325,99 @@ class ReceiverTests(unittest.TestCase):
         self.assertEqual(len(refreshes), 1)
         self.assertEqual(pauses, [2.0])
 
+    def test_usb_waits_before_rebootstrap_and_refreshes_immediately_before_each_attempt(self):
+        keys = iter(("b" * 32, "c" * 32))
+        events = []
+        sent = []
+
+        class Response(io.BytesIO):
+            headers = {"Content-Type": "multipart/x-mixed-replace; boundary=frame"}
+            def __enter__(self): return self
+            def __exit__(self, *_): self.close()
+
+        def refresh():
+            events.append("refresh")
+            return f"http://127.0.0.1:8765/stream?key={next(keys)}"
+
+        def opener(request, **_kwargs):
+            events.append("open")
+            if events.count("open") == 1:
+                raise HTTPError(request.full_url, 403, "expired", {}, None)
+            return Response(part(b"one") + b"--frame--\r\n")
+
+        class Camera:
+            def __init__(self, *_): pass
+            def send(self, frame): sent.append(frame.copy())
+            def sleep_until_next_frame(self): pass
+            def close(self): pass
+
+        pauses = []
+        receive(
+            f"http://127.0.0.1:8765/stream?key={KEY}",
+            opener=opener,
+            decoder=lambda _: np.full((2, 3, 3), 100, dtype=np.uint8),
+            camera_factory=Camera,
+            refresh_session=refresh,
+            refresh_before_attempt=True,
+            stopped=lambda: len(sent) == 1,
+            pause=lambda seconds: (pauses.append(seconds), events.append("pause")),
+            message=lambda _: None,
+        )
+        self.assertEqual(events, ["refresh", "open", "pause", "refresh", "open"])
+        self.assertEqual(pauses, [2.0])
+
+    def test_usb_refresh_failure_prevents_an_unauthenticated_stream_attempt(self):
+        attempted = []
+        with self.assertRaisesRegex(ReceiverError, "USB bootstrap unavailable"):
+            receive(
+                f"http://127.0.0.1:8765/stream?key={KEY}",
+                refresh_session=lambda: (_ for _ in ()).throw(ReceiverError("USB bootstrap unavailable")),
+                refresh_before_attempt=True,
+                opener=lambda *_args, **_kwargs: attempted.append(True),
+                message=lambda _: None,
+            )
+        self.assertEqual(attempted, [])
+
+    def test_usb_rebootstraps_before_reconnect_after_stream_disconnect(self):
+        keys = iter(("b" * 32, "c" * 32))
+        events = []
+        sent = []
+
+        class Response(io.BytesIO):
+            headers = {"Content-Type": "multipart/x-mixed-replace; boundary=frame"}
+            def __enter__(self): return self
+            def __exit__(self, *_): self.close()
+
+        def refresh():
+            events.append("refresh")
+            return f"http://127.0.0.1:8765/stream?key={next(keys)}"
+
+        responses = iter((Response(part(b"one") + b"--frame--\r\n"), Response(part(b"two") + b"--frame--\r\n")))
+        def opener(*_args, **_kwargs):
+            events.append("open")
+            return next(responses)
+
+        class Camera:
+            def __init__(self, *_): pass
+            def send(self, frame): sent.append(frame.copy())
+            def sleep_until_next_frame(self): pass
+            def close(self): pass
+
+        pauses = []
+        receive(
+            f"http://127.0.0.1:8765/stream?key={KEY}",
+            opener=opener,
+            decoder=lambda _: np.full((2, 3, 3), 100, dtype=np.uint8),
+            camera_factory=Camera,
+            refresh_session=refresh,
+            refresh_before_attempt=True,
+            stopped=lambda: sum(bool(np.any(frame)) for frame in sent) == 2,
+            pause=pauses.append,
+            message=lambda _: None,
+        )
+        self.assertEqual(events, ["refresh", "open", "refresh", "open"])
+        self.assertEqual(pauses, [2.0])
+
     def test_connection_state_clears_and_restores_controls_during_internal_retry(self):
         class Response(io.BytesIO):
             headers = {"Content-Type": "multipart/x-mixed-replace; boundary=frame"}

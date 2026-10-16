@@ -293,17 +293,22 @@ class SessionController:
     ) -> None:
         audio_stop = threading.Event()
         audio_thread = self._start_audio(video_url, config.audio_output, audio_stop, usb=config.usb)
+        audio_url: str | None = video_url if config.audio_output is not None else None
 
         def refresh_session() -> str:
-            nonlocal audio_stop, audio_thread
+            nonlocal audio_stop, audio_thread, audio_url
             self._set_connection_state(False)
             refreshed_url = self._session_stream_url(config, self._session_discoverer(link_alive))
-            if config.audio_output is not None:
-                if not self._stop_audio(audio_stop, audio_thread):
+            if config.audio_output is not None and refreshed_url != audio_url:
+                if audio_thread is not None and not self._stop_audio(audio_stop, audio_thread):
                     self._set_audio_error("Microphone forwarding did not stop after its USB session expired.")
                     raise ReceiverError("Microphone forwarding did not stop safely for the refreshed USB session.")
+                # Stopping audio can take seconds, longer than the USB proof lifetime.
+                # Bootstrap again only after that wait, then bind both streams to it.
+                refreshed_url = self._session_stream_url(config, self._session_discoverer(link_alive))
                 audio_stop = threading.Event()
                 audio_thread = self._start_audio(refreshed_url, config.audio_output, audio_stop, usb=True)
+                audio_url = refreshed_url
             return refreshed_url
 
         try:
@@ -322,6 +327,7 @@ class SessionController:
                 if config.usb:
                     receiver_options.update(
                         refresh_session=refresh_session,
+                        refresh_before_attempt=True,
                         opener=USB_SESSION_OPENER,
                     )
                 self._receiver(video_url, **receiver_options)

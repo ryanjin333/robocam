@@ -299,6 +299,7 @@ def receive(
     codec: str = "mjpeg",
     compressed_decoder=None,
     refresh_session: Callable[[], str] | None = None,
+    refresh_before_attempt: bool = False,
     connection_state: Callable[[bool, str | None], None] | None = None,
 ) -> None:
     """Reconnect on network loss, reusing the webcam until dimensions change.
@@ -309,6 +310,8 @@ def receive(
     """
     if codec not in ("mjpeg", "h264", "hevc"):
         raise ReceiverError("Choose MJPEG, H.264, or HEVC video.")
+    if refresh_before_attempt and refresh_session is None:
+        raise ReceiverError("USB streaming requires a session refresh callback.")
     video_decoder = None
     if codec != "mjpeg":
         from rocam_video import AVDecoder, read_packet
@@ -348,6 +351,12 @@ def receive(
             if not link_alive():
                 report_connection(False)
                 raise UsbTransportError("USB forwarding stopped; reconnecting.")
+            if refresh_before_attempt:
+                # USB bootstrap expires quickly. Acquire it directly before every stream
+                # request so an elapsed retry wait cannot invalidate the proof of transport.
+                active_url = refresh_session()
+                if stopped():
+                    return
             try:
                 request = Request(active_url, headers={"User-Agent": "Rocam-Webcam/0.1"})
                 with open_stream(request, timeout=10) as response:
@@ -427,6 +436,16 @@ def receive(
                 if code == 403:
                     blackout()
                     if refresh_session is not None:
+                        if refresh_before_attempt:
+                            message("Rocam USB session expired; retrying...")
+                            # Back off before the next bootstrap. The next loop then obtains a
+                            # fresh proof directly before its authenticated stream request.
+                            if stopped():
+                                return
+                            pause(retry_seconds)
+                            if stopped():
+                                return
+                            continue
                         active_url = refresh_session()
                         message("Rocam USB session refreshed; reconnecting...")
                         if stopped():
@@ -612,18 +631,24 @@ def main(argv: list[str] | None = None) -> int:
                             thread.start()
                             return thread
 
+                        audio_url: str | None = url if args.audio_output is not None else None
                         audio_thread = start_audio(url)
 
                         def refresh_session() -> str:
-                            nonlocal audio_stop, audio_thread
+                            nonlocal audio_stop, audio_thread, audio_url
                             refreshed_url = stream_url(
                                 discover_usb_session(link_alive), depth=args.depth, usb=True, codec=args.codec,
                             )
-                            if args.audio_output is not None:
-                                if not stop_audio():
+                            if args.audio_output is not None and refreshed_url != audio_url:
+                                if audio_thread is not None and not stop_audio():
                                     raise ReceiverError("Microphone forwarding did not stop safely for the refreshed USB session.")
+                                # Audio cleanup can outlive the short USB bootstrap proof.
+                                refreshed_url = stream_url(
+                                    discover_usb_session(link_alive), depth=args.depth, usb=True, codec=args.codec,
+                                )
                                 audio_stop = threading.Event()
                                 audio_thread = start_audio(refreshed_url)
+                                audio_url = refreshed_url
                             return refreshed_url
 
                         print("Connecting to Rocam. Press Ctrl+C to stop.")
@@ -634,6 +659,7 @@ def main(argv: list[str] | None = None) -> int:
                                 link_alive=link_alive,
                                 codec="mjpeg" if args.depth else args.codec,
                                 refresh_session=refresh_session,
+                                refresh_before_attempt=True,
                                 opener=USB_SESSION_OPENER,
                             )
                         finally:
