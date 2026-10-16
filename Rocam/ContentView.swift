@@ -483,7 +483,7 @@ struct ContentView: View {
                     .font(.footnote.weight(.medium))
                 Spacer(minLength: 0)
                 HStack(spacing: 6) {
-                    Text(server.isUSBConnected ? "Connected" : "Plug in a cable")
+                    Text(server.isUSBConnected ? "Connected" : "Waiting for computer")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                     if server.isUSBConnected {
@@ -496,7 +496,6 @@ struct ContentView: View {
             }
             .padding(.horizontal, 14)
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-            .floatingGlass(in: Capsule())
             if services.externalDisplayActive {
                 Label("HDMI", systemImage: "display")
                     .font(.footnote.weight(.semibold))
@@ -634,7 +633,6 @@ struct ContentView: View {
         }
         .padding(.horizontal, 14)
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-        .floatingGlass(in: Capsule(), interactive: true)
     }
 
     private func copyLink(_ url: String, id: String) {

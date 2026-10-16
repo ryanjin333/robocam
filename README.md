@@ -1,4 +1,4 @@
-<h1><img src="artwork/RocamIcon.png" alt="Rocam logo" width="40" height="40"> Rocam</h1>
+<h1><img src="artwork/RocamIcon.png" alt="Rocam logo" width="40" height="40" align="center"> Rocam</h1>
 
 Turn your iPhone into a USB webcam, with optional LiDAR depth.
 
