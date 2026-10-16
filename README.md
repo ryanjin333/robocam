@@ -7,9 +7,8 @@ synchronized RGB/depth capture.
 
 <p>
   <img src="artwork/robotics-overhead.png" alt="Overhead robotics view" width="300" />
-  <img src="artwork/resolution-options.png" alt="Resolution options" width="300" />
 </p>
-<p><em>Overhead robotics view</em> &nbsp;&nbsp;&nbsp; <em>Resolution options.</em></p>
+<p><em>Overhead robotics view</em></p>
 
 LiDAR is a sensor that helps the phone see how far things are from it. Your
 iPhone may show this as a depth view when it has LiDAR.
