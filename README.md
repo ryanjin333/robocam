@@ -1,13 +1,24 @@
 <h1><img src="artwork/RocamIcon.png" alt="Rocam logo" width="40" height="40" align="absmiddle"> Rocam</h1>
 
-Turn your iPhone into a USB webcam, with optional LiDAR depth.
+Turn your iPhone into a USB webcam with optional LiDAR depth.
 
-![Rocam camera preview on iPhone](artwork/app-in-action.png)
+Built with robotics in mind for overhead views, robot observations, and
+synchronized RGB/depth capture.
 
-Rocam running on iPhone.
+<p>
+  <img src="artwork/app-in-action.png" alt="Overhead robotics view" width="300" />
+  <img src="artwork/resolution-options.png" alt="Resolution options" width="300" />
+</p>
+<p><em>Overhead robotics view</em> &nbsp;&nbsp;&nbsp; <em>Resolution options.</em></p>
 
 LiDAR is a sensor that helps the phone see how far things are from it. Your
 iPhone may show this as a depth view when it has LiDAR.
+
+## iPhone compatibility
+
+Rocam requires iOS 17 or later. LiDAR depth requires an [iPhone 12 Pro or
+iPhone 12 Pro Max](https://support.apple.com/en-us/111875), or a newer Pro
+model. RGB-only video also works on supported non-Pro iPhones.
 
 ## Set it up with an AI agent
 

@@ -134,8 +134,9 @@ struct ContentView: View {
         )
         .sheet(isPresented: $showConnection) {
             NavigationStack {
-                ScrollView { connectionCard.padding(16) }
-                    .background(Color(red: 0.055, green: 0.06, blue: 0.07))
+                Form {
+                    connectionCard
+                }
                     .navigationTitle("Connection")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
@@ -477,14 +478,12 @@ struct ContentView: View {
     }
 
     private var connectionCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        Section {
             HStack {
                 Text("USB")
-                    .font(.subheadline.weight(.medium))
                 Spacer(minLength: 0)
                 HStack(spacing: 6) {
                     Text(server.isUSBConnected ? "Connected" : "Waiting for computer")
-                        .font(.footnote.weight(.semibold))
                         .foregroundStyle(.secondary)
                     if server.isUSBConnected {
                         Circle()
@@ -494,12 +493,12 @@ struct ContentView: View {
                     }
                 }
             }
-            .padding(.horizontal, 14)
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+
             if services.externalDisplayActive {
                 Label("HDMI", systemImage: "display")
-                    .font(.footnote.weight(.semibold))
                     .foregroundStyle(.mint)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             }
             if server.isRunning, let wifiLinkURL {
                 wifiConnectionLink(url: wifiLinkURL)
@@ -507,42 +506,34 @@ struct ContentView: View {
             if server.isRunning && hdrLinkCount == 1 {
                 hdrLinkRows
             } else if server.isRunning && hdrLinkCount > 1 {
-                VStack(alignment: .leading, spacing: 8) {
-                    Button {
-                        withAnimation(controlAnimation) { showConnectionOptions.toggle() }
-                    } label: {
-                        HStack {
-                            Text("Links")
-                                .font(.body.weight(.medium))
-                            Spacer(minLength: 0)
-                            Image(systemName: showConnectionOptions ? "chevron.up" : "chevron.down")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.horizontal, 14)
-                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                        .contentShape(Capsule())
+                Button {
+                    withAnimation(controlAnimation) { showConnectionOptions.toggle() }
+                } label: {
+                    HStack {
+                        Text("Links")
+                        Spacer(minLength: 0)
+                        Image(systemName: showConnectionOptions ? "chevron.up" : "chevron.down")
+                            .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
-                    .floatingGlass(in: Capsule(), interactive: true)
-                    .accessibilityLabel("Links")
-                    .accessibilityValue(showConnectionOptions ? "Expanded" : "Collapsed")
-                    .accessibilityHint("Shows connection links")
-
-                    if showConnectionOptions {
-                        VStack(alignment: .leading, spacing: 8) {
-                            hdrLinkRows
-                        }
-                        .transition(statusTransition)
-                    }
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
-                .animation(controlAnimation, value: showConnectionOptions)
+                .buttonStyle(.plain)
+                .accessibilityLabel("Links")
+                .accessibilityValue(showConnectionOptions ? "Expanded" : "Collapsed")
+                .accessibilityHint("Shows connection links")
+
+                if showConnectionOptions {
+                    hdrLinkRows
+                        .transition(statusTransition)
+                }
             }
             if let message = server.errorMessage ?? camera.errorMessage {
-                Text(message).font(.footnote).foregroundStyle(.orange)
+                Text(message)
+                    .foregroundStyle(.orange)
             }
         }
-        .card()
+        .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
     }
 
     private var wifiLinkURL: String? {
@@ -574,22 +565,17 @@ struct ContentView: View {
         } label: {
             HStack(spacing: 10) {
                 Text(title)
-                    .font(.footnote.weight(.medium))
                 Spacer(minLength: 0)
                 HStack(spacing: 4) {
                     Text(wasCopied ? "Copied" : "Copy")
                     Image(systemName: wasCopied ? "checkmark" : "doc.on.doc")
-                        .font(.system(size: 11, weight: .semibold))
                 }
-                .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 14)
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-            .contentShape(Capsule())
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .floatingGlass(in: Capsule(), interactive: true)
         .accessibilityLabel(wasCopied ? "\(title) link copied" : "Copy \(title) link")
         .accessibilityHint("Copies the connection link")
     }
@@ -599,12 +585,10 @@ struct ContentView: View {
         return HStack(spacing: 0) {
             HStack(spacing: 4) {
                 Text("Wi-Fi")
-                    .font(.subheadline.weight(.medium))
                 Button {
                     showWiFiInfo = true
                 } label: {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.secondary)
                         .frame(width: 44, height: 44, alignment: .leading)
                         .contentShape(Rectangle())
@@ -620,9 +604,7 @@ struct ContentView: View {
                 HStack(spacing: 4) {
                     Text(wasCopied ? "Copied" : "Copy")
                     Image(systemName: wasCopied ? "checkmark" : "doc.on.doc")
-                        .font(.system(size: 12, weight: .semibold))
                 }
-                .font(.footnote.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .frame(minWidth: 44, minHeight: 44)
                 .contentShape(Rectangle())
@@ -631,7 +613,6 @@ struct ContentView: View {
             .accessibilityLabel(wasCopied ? "Wi-Fi link copied" : "Copy Wi-Fi link")
             .accessibilityHint("Copies the connection link")
         }
-        .padding(.horizontal, 14)
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
     }
 
