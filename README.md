@@ -10,15 +10,15 @@ synchronized RGB/depth capture.
 <table>
   <tr>
     <td width="33.33%" align="center">
-      <img src="artwork/robotics-overhead-clean.png" alt="Camera view" width="240" /><br />
+      <img src="artwork/camera-view-status-clean.png" alt="Camera view" width="240" /><br />
       <sub>Camera view</sub>
     </td>
     <td width="33.33%" align="center">
-      <img src="artwork/resolution-settings-clean.png" alt="Resolution settings" width="240" /><br />
+      <img src="artwork/resolution-status-clean.png" alt="Resolution settings" width="240" /><br />
       <sub>Resolution settings</sub>
     </td>
     <td width="33.33%" align="center">
-      <img src="artwork/connection-settings-clean.png" alt="Connection settings" width="240" /><br />
+      <img src="artwork/connection-status-clean.png" alt="Connection settings" width="240" /><br />
       <sub>Connection settings</sub>
     </td>
   </tr>
