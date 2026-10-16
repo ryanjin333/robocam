@@ -18,8 +18,8 @@ synchronized RGB/depth capture.
       <sub>Resolution settings</sub>
     </td>
     <td width="33.33%" align="center">
-      <img src="artwork/coming-soon-placeholder.svg" alt="Coming soon" width="240" /><br />
-      <sub>Coming soon</sub>
+      <img src="artwork/connection-settings-clean.png" alt="Connection settings" width="240" /><br />
+      <sub>Connection settings</sub>
     </td>
   </tr>
 </table>
