@@ -480,11 +480,11 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("USB")
-                    .font(.footnote.weight(.medium))
+                    .font(.subheadline.weight(.medium))
                 Spacer(minLength: 0)
                 HStack(spacing: 6) {
                     Text(server.isUSBConnected ? "Connected" : "Waiting for computer")
-                        .font(.caption.weight(.semibold))
+                        .font(.footnote.weight(.semibold))
                         .foregroundStyle(.secondary)
                     if server.isUSBConnected {
                         Circle()
@@ -599,12 +599,12 @@ struct ContentView: View {
         return HStack(spacing: 0) {
             HStack(spacing: 4) {
                 Text("Wi-Fi")
-                    .font(.footnote.weight(.medium))
+                    .font(.subheadline.weight(.medium))
                 Button {
                     showWiFiInfo = true
                 } label: {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.secondary)
                         .frame(width: 44, height: 44, alignment: .leading)
                         .contentShape(Rectangle())
@@ -620,9 +620,9 @@ struct ContentView: View {
                 HStack(spacing: 4) {
                     Text(wasCopied ? "Copied" : "Copy")
                     Image(systemName: wasCopied ? "checkmark" : "doc.on.doc")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold))
                 }
-                .font(.caption.weight(.semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .frame(minWidth: 44, minHeight: 44)
                 .contentShape(Rectangle())
