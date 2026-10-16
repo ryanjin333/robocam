@@ -35,38 +35,10 @@ model. RGB-only video also works on supported non-Pro iPhones.
 
 ## Set it up with an AI agent
 
-Give this prompt to a coding agent with access to your computer, such as Codex
-or Claude Code:
+Paste this into Codex or Claude Code:
 
 ```text
-Set up Rocam from https://github.com/ryanjin333/rocam so I can use my
-iPhone as a USB webcam on this computer.
-
-Clone the repository if needed, then read README.md, desktop/README.md,
-and the setup script for my operating system. Check what is already installed
-and use the existing setup scripts rather than creating a separate installer:
-- macOS: bash desktop/setup_macos.sh (requires Homebrew)
-- Ubuntu/Debian Linux: python3 desktop/setup_linux.py
-- Windows PowerShell: ./desktop/setup_windows.ps1 (requires winget)
-Run setup from the repository root as the desktop user, not as root.
-Install missing prerequisites and configure the receiver to start at login.
-Keep USB mode at 30 FPS and microphone forwarding off.
-
-The iPhone app must be installed using Xcode on a Mac, even if the receiver
-computer runs Linux or Windows. If a Mac and iPhone are available, help me
-open Rocam.xcodeproj, select my Apple Team and real iPhone, and build and run
-the app. Otherwise, explain exactly what I need to do on a Mac.
-Ask me to handle Apple sign-in, signing choices, device trust, Developer Mode,
-and any OS permission or driver approval that requires my interaction.
-On macOS, guide me through enabling the OBS Camera Extension and starting
-then stopping OBS Virtual Camera once. On Windows, complete the normal OBS
-Virtual Camera setup. Preserve unrelated camera and startup configurations.
-
-Verify the receiver is running and configured to start at login. With the
-iPhone connected by USB, unlocked, trusted, and running Rocam, verify live
-video in a camera app: select Rocam on Linux or OBS Virtual Camera on macOS
-and Windows. Keep session keys private. Report what you verified and any
-remaining manual steps; do not claim the camera works without a live check.
+Set up https://github.com/ryanjin333/rocam as my iPhone USB webcam and verify live video.
 ```
 
 The agent can install and configure the desktop receiver, but you still need
